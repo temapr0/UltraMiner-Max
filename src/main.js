@@ -26,10 +26,42 @@ window.app = {
         {"name": "imgBtnTriangleSmall", "path": "assets/images/buttons/triangleSmall.svg"},
         {"name": "imgBtnWave",          "path": "assets/images/buttons/wave.svg"},
 
+        {"name": "imgLangAz",           "path": "assets/images/lang/az.png"},
+        {"name": "imgLangBn",           "path": "assets/images/lang/bn.png"},
+        {"name": "imgLangDe",           "path": "assets/images/lang/de.png"},
+        {"name": "imgLangEl",           "path": "assets/images/lang/el.png"},
+        {"name": "imgLangEs",           "path": "assets/images/lang/es.png"},
+        {"name": "imgLangFr",           "path": "assets/images/lang/fr.png"},
+        {"name": "imgLangEn",           "path": "assets/images/lang/gb.png"},
+        {"name": "imgLangHi",           "path": "assets/images/lang/hi.png"},
+        {"name": "imgLangMr",           "path": "assets/images/lang/hi.png"},
+        {"name": "imgLangTe",           "path": "assets/images/lang/hi.png"},
+        {"name": "imgLangId",           "path": "assets/images/lang/id.png"},
+        {"name": "imgLangIt",           "path": "assets/images/lang/it.png"},
+        {"name": "imgLangKk",           "path": "assets/images/lang/kk.png"},
+        {"name": "imgLangKo",           "path": "assets/images/lang/ko.png"},
+        {"name": "imgLangKy",           "path": "assets/images/lang/ky.png"},
+        {"name": "imgLangLt",           "path": "assets/images/lang/lt.png"},
+        {"name": "imgLangPl",           "path": "assets/images/lang/pl.png"},
+        {"name": "imgLangPt",           "path": "assets/images/lang/pt.png"},
+        {"name": "imgLangRu",           "path": "assets/images/lang/ru.png"},
+        {"name": "imgLangSw",           "path": "assets/images/lang/sw.png"},
+        {"name": "imgLangTg",           "path": "assets/images/lang/tg.png"},
+        {"name": "imgLangTh",           "path": "assets/images/lang/th.png"},
+        {"name": "imgLangTl",           "path": "assets/images/lang/tl.png"},
+        {"name": "imgLangTr",           "path": "assets/images/lang/tr.png"},
+        {"name": "imgLangUk",           "path": "assets/images/lang/uk.png"},
+        {"name": "imgLangUz",           "path": "assets/images/lang/uz.png"},
+        {"name": "imgLangVi",           "path": "assets/images/lang/vi.png"},
+        {"name": "imgLangZh",           "path": "assets/images/lang/zh.png"},
+
         {"name": "imgJp1",              "path": "assets/images/img1.webp"},
         {"name": "imgJp2",              "path": "assets/images/img2.webp"},
         {"name": "imgJp3",              "path": "assets/images/img3.webp"},
         {"name": "imgJp4",              "path": "assets/images/img4.webp"},
+
+        //{ "name": "sfxMap",             "path": "assets/sound/sprite.json" },
+        //{ "name": "sfxMain",            "path": "assets/sound/mainSounds.mp3"},
 
         //{"name": "imgLogo",           "path": "assets/images/logo.png"},
         {"name": "imgBgMain",           "path": "assets/images/bgMain.png"}
@@ -357,6 +389,8 @@ window.app = {
         });
 
         this.game.speed = this.lsGet('game', 'speed', 1);
+        this.lang = this.lsGet('data', 'lang', 'en');
+        this.sound = this.lsGet('data', 'sound', true);
 
         this.gameRoot = new PIXI.Container();
 
@@ -372,6 +406,13 @@ window.app = {
         await this.buildLoadingScreen();
         this.resize();
         await this.loadAssets();
+
+/*
+        const keys = Object.keys(this.langs).sort();
+        console.log("Langs count:", keys.length);
+        console.log("Langs keys:", keys);
+*/
+
         this.screens.loading.visible = false;
 
         await this.buildBg();
@@ -381,6 +422,8 @@ window.app = {
         await this.buildBetsModal();
         await this.buildWinsModal();
         await this.buildAutoModal();
+        await this.buildSettingsModal();
+        await this.buildHelpModal();
 
 
         const ws = new WebSocket("wss://fertiso.xyz:2096/777");
@@ -806,11 +849,11 @@ window.app = {
         buttonsContainer.x = 25;
         buttonsContainer.y = 25;
 
-/*
-        const startContainer = new PIXI.Container();
-        startContainer.x = 360;
-        startContainer.y = 105;
-*/
+        /*
+                const startContainer = new PIXI.Container();
+                startContainer.x = 360;
+                startContainer.y = 105;
+        */
 
         windowContainer.addChild(buttonsContainer);
         //windowContainer.addChild(startContainer);
@@ -900,26 +943,280 @@ window.app = {
         // ------------------------------------------------------------
         // Кнопка START
         // ------------------------------------------------------------
-/*
-        const startBtn = makeButton(
-            "START",
-            btnWidth * 2 + padding,
-            btnHeight,
-            () => {
-                if (this.autospin.count == null) return;
-                this.autospin.enabled = true;
-                this.closeModal(this.modals.autospin);
-                this.startSpin();
-            },
-            false
-        );
-        startContainer.addChild(startBtn);
-*/
+        /*
+                const startBtn = makeButton(
+                    "START",
+                    btnWidth * 2 + padding,
+                    btnHeight,
+                    () => {
+                        if (this.autospin.count == null) return;
+                        this.autospin.enabled = true;
+                        this.closeModal(this.modals.autospin);
+                        this.startSpin();
+                    },
+                    false
+                );
+                startContainer.addChild(startBtn);
+        */
 
         // ------------------------------------------------------------
         // INIT
         // ------------------------------------------------------------
         renderCounts();
+    },
+
+    async buildSettingsModal() {
+        const screen = new PIXI.Container();
+        screen.removeChildren();
+        this.modals.settings = screen;
+        this.gameRoot.addChild(screen);
+        screen.visible = false;
+
+        screen.eventMode = "static";
+        screen.on("pointerdown", (e) => {
+            screen.visible = false;
+            e.stopPropagation();
+        });
+
+        screen.x = 10;
+        screen.y = 10;
+
+        const bg = new PIXI.Graphics();
+        bg.roundRect(0, 0, this.gameWidth-10, this.gameHeight-10, 5)
+            .fill({ color: 0x000000, alpha: 0.9 })
+            .stroke({ width: 4, color: 0xffffff });
+        screen.addChild(bg);
+
+
+
+        const padding = 20;
+        const leftColWidth = 220;
+        const rowHeight = 120;
+
+        const leftColX = padding;
+        const rightColX = leftColX + leftColWidth + padding;
+
+        let rowY = padding;
+
+
+        const makeLabel = (text, y) => {
+            const t = new PIXI.Text({
+                text,
+                style: {
+                    fill: "#ffffff",
+                    fontSize: 28,
+                    fontWeight: "bold"
+                }
+            });
+            t.x = leftColX;
+            t.y = y + 35;
+            screen.addChild(t);
+        };
+
+        makeLabel("SOUND", rowY);
+        makeLabel("FULLSCREEN", rowY + rowHeight);
+        makeLabel("LANGUAGE", rowY + rowHeight * 2);
+
+
+
+        const makeToggleButton = (label, x, y, active, onClick) => {
+            const btn = new PIXI.Container();
+            btn.x = x;
+            btn.y = y;
+
+            btn.eventMode = "static";
+            btn.cursor = "pointer";
+
+            const bg = new PIXI.Graphics();
+            bg.roundRect(0, 0, 100, 50, 6)
+                .fill({ color: active ? 0x444444 : 0x222222 })
+                .stroke({ width: 3, color: active ? 0xffffff : 0x777777 });
+            btn.addChild(bg);
+
+            const txt = new PIXI.Text({
+                text: label,
+                style: {
+                    fill: active ? "#ffffff" : "#aaaaaa",
+                    fontSize: 22,
+                    compilation: true
+                }
+            });
+            txt.x = (100 - txt.width) / 2;
+            txt.y = (50 - txt.height) / 2;
+            btn.addChild(txt);
+
+            btn.on("pointerdown", (e) => {
+                onClick();
+                e.stopPropagation();
+            });
+
+            screen.addChild(btn);
+        };
+
+        makeToggleButton(
+            "ON",
+            rightColX,
+            rowY + 30,
+            this.sound === true,
+            () => { this.sound = true; }
+        );
+
+        makeToggleButton(
+            "OFF",
+            rightColX + 120,
+            rowY + 30,
+            this.sound === false,
+            () => { this.sound = false; }
+        );
+
+        makeToggleButton(
+            "ON",
+            rightColX,
+            rowY + rowHeight + 30,
+            this.fullscreen === true,
+            () => { this.fullscreen = true; }
+        );
+
+        makeToggleButton(
+            "OFF",
+            rightColX + 120,
+            rowY + rowHeight + 30,
+            this.fullscreen === false,
+            () => { this.fullscreen = false; }
+        );
+
+
+        let x = rightColX;
+        let y = rowY + rowHeight * 2 + 10;
+
+        const gap = 12;
+        const btnSize = 100;
+        const maxX = this.gameWidth - padding - btnSize;
+
+        let activeLangFrame = null;
+
+        for (const langCode in this.langs) {
+
+            const assetName =
+                "imgLang" + langCode.charAt(0).toUpperCase() + langCode.slice(1);
+
+            const texture = PIXI.Assets.get(assetName);
+            if (!texture) continue;
+
+            if (x > maxX) {
+                x = rightColX;
+                y += btnSize + gap;
+            }
+
+            const btn = new PIXI.Container();
+            btn.x = x;
+            btn.y = y;
+
+            btn.eventMode = "static";
+            btn.cursor = "pointer";
+
+            const icon = new PIXI.Sprite(texture);
+            btn.addChild(icon);
+
+            if (langCode === this.lang) {
+                const frame = new PIXI.Graphics();
+                frame.roundRect(
+                    -6,
+                    -6,
+                    btnSize + 12,
+                    btnSize + 12,
+                    5
+                )
+                    .stroke({ width: 4, color: 0xffffff });
+                btn.addChild(frame);
+                activeLangFrame = frame;
+            }
+
+            btn.on("pointerdown", (e) => {
+
+                if (this.lang !== langCode) {
+
+                    // убрать старую рамку
+                    if (activeLangFrame) {
+                        activeLangFrame.destroy();
+                        activeLangFrame = null;
+                    }
+
+                    // новая рамка
+                    const frame = new PIXI.Graphics();
+                    frame.roundRect(
+                        -6,
+                        -6,
+                        btnSize + 12,
+                        btnSize + 12,
+                        5
+                    )
+                        .stroke({ width: 4, color: 0xffffff });
+
+                    btn.addChild(frame);
+                    activeLangFrame = frame;
+
+                    this.lang = langCode;
+                }
+
+                this.reloadLang();
+                this.lsSet('data', 'lang', langCode);
+                screen.visible = false;
+                e.stopPropagation();
+            });
+
+            screen.addChild(btn);
+
+            x += btnSize + gap;
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    },
+
+    async buildHelpModal() {
+        const screen = new PIXI.Container();
+        screen.removeChildren();
+        this.modals.help = screen;
+        this.gameRoot.addChild(screen);
+        screen.visible = false;
+
+        screen.eventMode = "static";
+        screen.on("pointerdown", (e) => {
+            screen.visible = false;
+            e.stopPropagation();
+        });
+
+        screen.x = 10;
+        screen.y = 10;
+
+        const bg = new PIXI.Graphics();
+        bg.roundRect(0, 0, this.gameWidth-10, this.gameHeight-10, 5)
+            .fill({ color: 0x000000, alpha: 0.9 })
+            .stroke({ width: 4, color: 0xffffff });
+        screen.addChild(bg);
+
+
+
+
     },
 
     buildBg() {
@@ -983,7 +1280,7 @@ window.app = {
         mask.endFill();
 
         // Рамка
-        screen.addChild(new PIXI.Graphics().rect(0, 0, this.gameWidth, this.gameHeight).stroke({ width: 4, color: 0xff0000 }));
+        //screen.addChild(new PIXI.Graphics().rect(0, 0, this.gameWidth, this.gameHeight).stroke({ width: 4, color: 0xff0000 }));
 
 
         this.gameRoot.addChild(mask);
@@ -1040,16 +1337,12 @@ window.app = {
             });
             //t.anchor.set(0.5);
             t.x = 100;
-            t.y = 10;
-
+            t.y = 15;
             c.addChild(g, icon, t);
-
             c.bg = g;
             c.icon = icon;
             c.text = t;
-
             this.jpText[index] = t;
-
             screen.addChild(c);
             return c;
         };
@@ -1127,10 +1420,7 @@ window.app = {
         goodPanel.addChild(infoText);
         this.texts.info = infoText;
 
-
-
         screen.addChild(goodPanel);
-
 
         const betsWidth = 1180;
         const betsHeight = 200;
@@ -1148,7 +1438,7 @@ window.app = {
         betsPanel.addChild(betsBg);
 
         const balanceTitleText = new PIXI.Text({
-            text: "Balance ("+this.data.currency+")",
+            text: this.getText("balance") + " (" + this.data.currency + ")",
             style: {
                 fill: "gold",
                 fontSize: 40,
@@ -1158,6 +1448,7 @@ window.app = {
         balanceTitleText.anchor.set(0.5);
         balanceTitleText.x = 180;
         balanceTitleText.y = 50;
+        this.texts.balanceTitle = balanceTitleText;
         betsPanel.addChild(balanceTitleText);
 
         const balanceText = new PIXI.Text({
@@ -1175,7 +1466,7 @@ window.app = {
         betsPanel.addChild(balanceText);
 
         const betCaption = new PIXI.Text({
-            text: "bet",
+            text: this.getText("bet"),
             style: {
                 fill: "gold",
                 fontSize: 40,
@@ -1185,6 +1476,7 @@ window.app = {
         betCaption.anchor.set(0.5);
         betCaption.x = 500;
         betCaption.y = 50;
+        this.texts.betsTitle = betCaption;
         betsPanel.addChild(betCaption);
         betCaption.eventMode = "static";     // включает участие в событиях
         betCaption.cursor = "pointer";       // меняет курсор на руку
@@ -1193,7 +1485,7 @@ window.app = {
         });
 
         const linesCaption = new PIXI.Text({
-            text: "lines",
+            text: this.getText("lines"),
             style: {
                 fill: "gold",
                 fontSize: 40,
@@ -1203,6 +1495,7 @@ window.app = {
         linesCaption.anchor.set(0.5);
         linesCaption.x = 680;
         linesCaption.y = 50;
+        this.texts.linesTitle = linesCaption;
         betsPanel.addChild(linesCaption);
         linesCaption.eventMode = "static";     // включает участие в событиях
         linesCaption.cursor = "pointer";       // меняет курсор на руку
@@ -1240,7 +1533,7 @@ window.app = {
         betsPanel.addChild(linesText);
 
         const lastWinCaption = new PIXI.Text({
-            text: "Last Win",
+            text: this.getText("last_win"),
             style: {
                 fill: "gold",
                 fontSize: 40,
@@ -1250,6 +1543,7 @@ window.app = {
         lastWinCaption.anchor.set(0.5);
         lastWinCaption.x = 1000;
         lastWinCaption.y = 50;
+        this.texts.lastWinTitle = lastWinCaption;
         betsPanel.addChild(lastWinCaption);
 
         const winText = new PIXI.Text({
@@ -1283,7 +1577,7 @@ window.app = {
         const btnSpin = this.createSpinButton(cx, 1900);
         screen.addChild(btnSpin);
 
-        const btnSpeed = this.createSpeedButton(cx-58, 1980, 1.4);
+        const btnSpeed = this.createSpeedButton(cx-68, 2015, 1.4);
         screen.addChild(btnSpeed);
 
         const btnAuto = this.createAutoButton(cx - 300, 1950);
@@ -1345,9 +1639,11 @@ window.app = {
         });
 
         btn.on('pointerup', () => {
-            if (!btn.disabled) {
-                btn.icon.alpha = ALPHA_HOVER;
-            }
+            if (!btn.disabled) btn.icon.alpha = ALPHA_HOVER;
+        });
+
+        btn.on('click', () => {
+            this.modals.settings.visible = true;
         });
 
         btn.on('pointerupoutside', () => {
@@ -1425,15 +1721,17 @@ window.app = {
             if (!btn.disabled) btn.speaker.alpha = ALPHA_CLICKED;
         });
 
-        btn.on('pointerup', () => {
+        btn.on('click', () => {
             if (this.sound) {
                 this.sound = false;
                 btn.wave.visible = false;
                 btn.cross.visible = true;
+                this.lsSet('data', 'sound', false);
             } else {
                 this.sound = true;
                 btn.wave.visible = true;
                 btn.cross.visible = false;
+                this.lsSet('data', 'sound', true);
             }
         });
 
@@ -1495,9 +1793,11 @@ window.app = {
         });
 
         btn.on('pointerup', () => {
-            if (!btn.disabled) {
-                btn.icon.alpha = ALPHA_HOVER;
-            }
+            if (!btn.disabled) btn.icon.alpha = ALPHA_HOVER;
+        });
+
+        btn.on('click', () => {
+            this.modals.help.visible = true;
         });
 
         btn.on('pointerupoutside', () => {
@@ -1761,43 +2061,37 @@ window.app = {
         const btn = new PIXI.Container();
         btn.x = x;
         btn.y = y;
-        //btn.width = 150;
-        //btn.height = 59;
         btn.interactive = true;
-        //btn.scale.set(scale);
         btn.cursor = 'pointer';
         btn.disabled = false;
 
         const btnBg = new PIXI.Graphics();
-        btnBg.roundRect(0, 0, 115, 45, 10)
-            .fill({color: 0x000000, alpha: 1});
+        btnBg.roundRect(0, 0, 135, 55, 10)
+            .fill({color: 0x000000, alpha: 0.7});
             //.stroke({width: 2, color: 0xffffff, alpha: 1});
 
         btn.addChild(btnBg);
 
         const triangle1 = new PIXI.Sprite(PIXI.Assets.get('imgBtnTriangleSmall'));
         triangle1.anchor.set(0.5);
-        //triangle1.scale.set(0.6);
-        triangle1.x = 22;
-        triangle1.y = 22;
+        triangle1.x = 32;
+        triangle1.y = 27;
         triangle1.alpha = ACTIVE_ALPHA;
         btn.triangle1 = triangle1;
         btn.addChild(triangle1);
 
         const triangle2 = new PIXI.Sprite(PIXI.Assets.get('imgBtnTriangleSmall'));
         triangle2.anchor.set(0.5);
-        //triangle2.scale.set(0.6);
-        triangle2.x = 57;
-        triangle2.y = 22;
+        triangle2.x = 67;
+        triangle2.y = 27;
         triangle2.alpha = (this.game.speed >= 2) ? ACTIVE_ALPHA : INACTIVE_ALPHA;
         btn.triangle2 = triangle2;
         btn.addChild(triangle2);
 
         const triangle3 = new PIXI.Sprite(PIXI.Assets.get('imgBtnTriangleSmall'));
         triangle3.anchor.set(0.5);
-        //triangle3.scale.set(0.6);
-        triangle3.x = 92;
-        triangle3.y = 22;
+        triangle3.x = 102;
+        triangle3.y = 27;
         triangle3.alpha = (this.game.speed >= 3) ? ACTIVE_ALPHA : INACTIVE_ALPHA;
         btn.triangle3 = triangle3;
         btn.addChild(triangle3);
@@ -2188,10 +2482,12 @@ window.app = {
             const fallbackName = assetNames[0].replace("anim", "img");
             const texture = PIXI.Assets.get(fallbackName);
             const sp = new PIXI.Sprite(texture ?? PIXI.Texture.WHITE);
+/*
             if (dbg !== undefined) {
                 const t = new PIXI.Text({ text: String(dbg), style:{ fill:"#ff00ff", fontSize:56, fontWeight:"bold", stroke:"#000", strokeThickness:3 }});
                 sp.addChild(t);
             }
+*/
             return sp;
         }
 
@@ -2200,10 +2496,12 @@ window.app = {
         anim.y = y-1;
         anim.x = -1;
 
+/*
         if (dbg !== undefined) {
             const t = new PIXI.Text({ text: String(dbg), style:{ fill:"#ff00ff", fontSize:56, fontWeight:"bold", stroke:"#000", strokeThickness:3 }});
             anim.addChild(t);
         }
+*/
 
         anim.animation = function (enable) {
             if (enable) {
@@ -2966,8 +3264,15 @@ window.app = {
     lsRemove(group, key) {
         const path = `games.${this.gameName}.${group}.${key}`;
         localStorage.removeItem(path);
-    }
+    },
 
+    reloadLang() {
+        this.texts.goodluck.text = this.getText("default");
+        this.texts.balanceTitle.text = this.getText("balance") + " (" + this.data.currency + ")";
+        this.texts.linesTitle.text = this.getText("lines");
+        this.texts.betsTitle.text = this.getText("bet");
+        this.texts.lastWinTitle.text = this.getText("last_win");
+    }
 };
 
 window.addEventListener("DOMContentLoaded", () => {
