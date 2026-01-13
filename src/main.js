@@ -10,6 +10,7 @@ window.app = {
         {"name": "animSymbolScatter",   "path": "assets/sprites/7-scatter.json"},
 
         {"name": "imgNumbers",          "path": "assets/sprites/numbers.json"},
+        {"name": "winTexts",            "path": "assets/sprites/win_title.json"},
 
         {"name": "imgBtnBg",            "path": "assets/images/buttons/bg.svg"},
         {"name": "imgBtnBgSpin",        "path": "assets/images/buttons/bgSpin.svg"},
@@ -361,6 +362,12 @@ window.app = {
         5: ["animSymbolCart"],
         6: ["animSymbolGnome"],
         7: ["animSymbolScatter"]
+    },
+    winMap: {
+        5: "big",
+        10: "mega",
+        10: "epic",
+        10: "mega",
     },
     gameWidth: 1270,
     gameHeight: 2460,
@@ -1642,7 +1649,7 @@ window.app = {
             if (!btn.disabled) btn.icon.alpha = ALPHA_HOVER;
         });
 
-        btn.on('click', () => {
+        btn.on('pointertap', () => {
             this.modals.settings.visible = true;
         });
 
@@ -1721,7 +1728,7 @@ window.app = {
             if (!btn.disabled) btn.speaker.alpha = ALPHA_CLICKED;
         });
 
-        btn.on('click', () => {
+        btn.on('pointertap', () => {
             if (this.sound) {
                 this.sound = false;
                 btn.wave.visible = false;
@@ -1796,7 +1803,7 @@ window.app = {
             if (!btn.disabled) btn.icon.alpha = ALPHA_HOVER;
         });
 
-        btn.on('click', () => {
+        btn.on('pointertap', () => {
             this.modals.help.visible = true;
         });
 
@@ -2013,7 +2020,7 @@ window.app = {
         });
 
         // ТОЛЬКО click
-        btn.on('click', () => {
+        btn.on('pointertap', () => {
             // --- АВТОРЕЖИМ ---
             if (this.autospin.enabled) {
 
@@ -2102,7 +2109,7 @@ window.app = {
             this.triangle3.alpha = (num >= 3) ? ACTIVE_ALPHA : INACTIVE_ALPHA;
         };
 
-        btn.on('click', () => {
+        btn.on('pointertap', () => {
             this.game.speed++;
             if (this.game.speed > 3) this.game.speed = 1;
             this.lsSet('game', 'speed', this.game.speed);
@@ -2165,7 +2172,7 @@ window.app = {
             if (!btn.disabled) btn.icon.alpha = ALPHA_CLICKED;
         });
 
-        btn.on('click', () => {
+        btn.on('pointertap', () => {
             if (!btn.disabled) {
                 btn.icon.alpha = ALPHA_HOVER;
                 this.toggleModal(this.modals.bets);
@@ -2315,7 +2322,7 @@ window.app = {
             }
         });
 
-        btn.on('click', () => {
+        btn.on('pointertap', () => {
             if (btn.disabled) return;
 
             if (this.autospin.enabled) {
@@ -2441,6 +2448,8 @@ window.app = {
     async sortReelSlotsInstant() {
 
         // ждём, пока придёт ответ
+        if (this.fastStop) return;
+        this.fastStop = true;
         while (!this.game.responsed) {
             await new Promise(r => setTimeout(r, 10));
         }
@@ -2454,11 +2463,9 @@ window.app = {
 
     sortOneReelSlotsInstant(reel) {
         reel.slots.sort((a, b) => a.row - b.row);
-
         for (let s = 0; s < reel.slots.length; s++) {
             reel.slots[s].y = s * this.cellH;
         }
-
         reel.y = Math.round(-this.cellH*7.6);
         reel.bounce = true;
         reel.state = 0;
@@ -2541,6 +2548,7 @@ window.app = {
         this.game.linesCanvas.removeChildren();
         this.data.balanceText.text = this.formatBalance(this.data.balance - this.game.bet);
         this.stopRequested = false;
+        this.fastStop = false;
         this.game.spinning = true;
         this.buttons.btnSpin.spinned(true);
         this.buttons.btnSpin.disable();

@@ -1,0 +1,43 @@
+{
+  "frames": {
+    "grats": {
+      "frame": { "x": 0, "y": 48, "w": 1110, "h": 100 }
+    },
+    "gratsHl": {
+      "frame": { "x": 0, "y": 148, "w": 1110, "h": 100 }
+    },
+    "superWin": {
+      "frame": { "x": 0, "y": 587, "w": 1090, "h": 168 }
+    },
+    "superWinHl": {
+      "frame": { "x": 0, "y": 756, "w": 1090, "h": 168 }
+    },
+    "megaWin": {
+      "frame": { "x": 0, "y": 250, "w": 1042, "h": 168 }
+    },
+    "megaWinHl": {
+      "frame": { "x": 0, "y": 418, "w": 1042, "h": 168 }
+    },
+    "epicWin": {
+      "frame": { "x": 1275, "y": 25, "w": 900, "h": 168 },
+      "rotated": true
+    },
+    "epicWinHl": {
+      "frame": { "x": 1106, "y": 25, "w": 900, "h": 168 },
+      "rotated": true
+    },
+    "bigWin": {
+      "frame": { "x": 1613, "y": 115, "w": 810, "h": 168 },
+      "rotated": true
+    },
+    "bigWinHl": {
+      "frame": { "x": 1444, "y": 115, "w": 810, "h": 168 },
+      "rotated": true
+    }
+  },
+
+  "meta": {
+    "image": "win_title.webp",
+    "size": { "w": 1783, "h": 926 }
+  }
+}
