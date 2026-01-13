@@ -364,10 +364,10 @@ window.app = {
         7: ["animSymbolScatter"]
     },
     winMap: {
-        5: "big",
-        10: "mega",
-        10: "epic",
-        10: "mega",
+        10: "big",
+        20: "mega",
+        30: "epic",
+        40: "super",
     },
     gameWidth: 1270,
     gameHeight: 2460,
@@ -2663,6 +2663,7 @@ window.app = {
 
                 winLines.push({
                     lineNum: this.data.linesMask[idx-1],
+                    maskDec: this.game.linesMask[idx],
                     mask: maskBin,
                     value: this.game.linesValue[idx],
                     line: this.data.lines[idx-1]
@@ -2701,7 +2702,7 @@ window.app = {
                 wl.hlSymbols = hlSymbols;
             }
             this.texts.info.text = this.getText("win") + ": " + this.game.win;
-            //console.log(winLines);
+            console.log(winLines);
             this.beginWinAnimation(winLines);
         } else {
             this.testAuto();
@@ -2770,6 +2771,92 @@ window.app = {
     animateWin(targetAmount, numberContainer, duration = 5000, scale = 1) {
         const start = performance.now();
         const from = 0;
+
+        // определяем тип выигрыша по кратности к ставке
+        const bet = this.game.bet ?? 0;
+        const mult = bet ? (targetAmount / bet) : 0;
+
+        let winText = "";
+        if (this.winMap) {
+            const keys = Object.keys(this.winMap).map(Number).filter(n => !isNaN(n)).sort((a,b) => a - b);
+            let picked = null;
+            for (const k of keys) {
+                if (mult >= k) picked = k;
+            }
+            if (picked !== null) winText = this.winMap[picked] ?? "";
+        }
+
+
+        // текст над счетчиком
+        let winLabel = numberContainer.winLabel;
+        if (winText) {
+            const sheet = PIXI.Assets.get('winTexts');
+            const animName = winText + "Win";
+            const frames = (sheet && sheet.animations && sheet.animations[animName]) ? sheet.animations[animName] : [];
+
+            if (!winLabel) {
+                winLabel = new PIXI.AnimatedSprite(frames);
+                winLabel.anchor.set(0.5); // <-- добавить
+                numberContainer.winLabel = winLabel;
+                if (numberContainer.parent) numberContainer.parent.addChild(winLabel);
+            } else {
+                winLabel.textures = frames;
+                if (winLabel.anchor) winLabel.anchor.set(0.5); // <-- добавить
+            }
+
+            // если кадры в json были rotated:true
+            // если кадры в json были rotated:true (атлас собран CCW) — дополнительно разворачиваем на 180°
+            if (frames[0] && frames[0].rotate) {
+                winLabel.rotation = Math.PI;
+            } else {
+                winLabel.rotation = 0;
+            }
+
+            winLabel.animationSpeed = 0.1; // ~3 раза в секунду
+            winLabel.loop = true;
+            winLabel.visible = true;
+            winLabel.play();
+
+            // grats над текстом большого выигрыша
+            let gratsLabel = numberContainer.gratsLabel;
+            const gratsFrames = (sheet && sheet.animations && sheet.animations.grats) ? sheet.animations.grats : [];
+
+            if (!gratsLabel) {
+                gratsLabel = new PIXI.AnimatedSprite(gratsFrames);
+                gratsLabel.anchor.set(0.5);
+                gratsLabel.animationSpeed = 0.1;
+                gratsLabel.loop = true;
+                gratsLabel.play();
+
+                numberContainer.gratsLabel = gratsLabel;
+                if (numberContainer.parent) numberContainer.parent.addChild(gratsLabel);
+            } else {
+                gratsLabel.textures = gratsFrames;
+                if (gratsLabel.anchor) gratsLabel.anchor.set(0.5);
+                gratsLabel.animationSpeed = 0.1;
+                gratsLabel.loop = true;
+                gratsLabel.play();
+            }
+
+            gratsLabel.visible = true;
+
+            clearTimeout(gratsLabel._hideTimer);
+            gratsLabel._hideTimer = setTimeout(() => {
+                gratsLabel.visible = false;
+            }, duration);
+
+
+            // скрыть через duration
+            clearTimeout(winLabel._hideTimer);
+            winLabel._hideTimer = setTimeout(() => {
+                winLabel.visible = false;
+            }, duration);
+
+        } else if (winLabel) {
+            winLabel.visible = false;
+            if (numberContainer.gratsLabel) numberContainer.gratsLabel.visible = false;
+        }
+
         const easeOut = t => 1 - Math.pow(1 - t, 3);
         const frame = (now) => {
             const progress = Math.min((now - start) / duration, 1);
@@ -2778,13 +2865,33 @@ window.app = {
             // формируем строку с 2 знаками — важно!
             const current = raw.toFixed(2);
             this.updateNumberContainer(numberContainer, current, scale);
-            numberContainer.x = this.gameFieldWidth / 2 - numberContainer.width / 2;
-            numberContainer.y = this.gameFieldHeight / 2 - numberContainer.height / 2;
+
+            const baseX = this.gameFieldWidth / 2;
+            const baseY = this.gameFieldHeight / 2;
+
+            numberContainer.x = baseX - numberContainer.width / 2;
+
+            let offsetY = 0;
+            if (winText && winLabel && winLabel.visible !== false) {
+                winLabel.visible = true;
+                winLabel.x = baseX
+                const margin = 10;
+                offsetY = (winLabel.height / 2) + margin;
+                winLabel.y = baseY - (numberContainer.height / 2);
+
+                const gratsLabel = numberContainer.gratsLabel;
+                if (gratsLabel && gratsLabel.visible !== false) {
+                    gratsLabel.x = baseX;
+                    gratsLabel.y = winLabel.y - winLabel.height / 2 - gratsLabel.height / 2 - margin;
+                }
+            }
+
+            numberContainer.y = baseY - numberContainer.height / 2 + offsetY;
+
             if (progress < 1) {
                 requestAnimationFrame(frame);
             }
         };
-
         requestAnimationFrame(frame);
     },
 
@@ -2840,17 +2947,20 @@ window.app = {
 
     async apiSpin() {
         var response = await this.apiRequest("spin", {"li": this.game.lines, "amount": this.game.bet});
+        console.log(response);
         this.data.balance = this.formatBalance(parseFloat(response.balance) + parseFloat(response.win) );
         this.game.comb = response.comb;
         this.game.extracomb = response.extracomb;
-        this.game.linesMask = this.dec2BinArr(response.linesMask);
+        this.game.linesMaskDec = response.linesMask;
+        //this.game.linesMask = this.dec2BinArr(response.linesMask);
+        this.game.linesMask = response.linesMask;
         this.game.linesValue = response.linesValue;
         this.game.win = response.win;
 
         //this.data.lastWinText.text = response.linesValue.length;
         if (response.win > 0) this.data.lastWinText.text = response.win;
-        console.log("Loaded spin()");
-        console.log(response.balance);
+        //console.log("Loaded spin()");
+        //console.log(response.balance);
         this.fillReels(response.comb);
         this.game.responsed = true;
         if (this.game.speed == 3) {

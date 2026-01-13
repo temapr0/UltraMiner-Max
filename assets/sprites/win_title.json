@@ -36,6 +36,14 @@
     }
   },
 
+  "animations": {
+    "grats": ["grats", "gratsHl"],
+    "superWin": ["superWin", "superWinHl"],
+    "megaWin": ["megaWin", "megaWinHl"],
+    "epicWin": ["epicWin", "epicWinHl"],
+    "bigWin": ["bigWin", "bigWinHl"]
+  },
+  
   "meta": {
     "image": "win_title.webp",
     "size": { "w": 1783, "h": 926 }
