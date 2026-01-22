@@ -317,12 +317,12 @@ window.app = {
     data: {
         "lineCoord": {
             "begin": 0,
-            "0": 128,
-            "1": 384,
-            "2": 640,
-            "3": 896,
-            "4": 1152,
-            "end": 1280
+            "0": 123,
+            "1": 369,
+            "2": 615,
+            "3": 861,
+            "4": 1107,
+            "end": 1230
         }
     },
     game: {
@@ -350,7 +350,8 @@ window.app = {
     currentScreen: null,
     gameTime: 2500,
     sound: true,
-    gameNameApi: "supabets",
+    gameNameApi: "livefruits",
+//    gameNameApi: "supabets",
     gameName: "Ultraminer",
     spinning: [false,false,false,false,false],
     symbolMap: {
@@ -369,8 +370,9 @@ window.app = {
         30: "epic",
         40: "super",
     },
-    gameWidth: 1270,
+    gameWidth: 1230,
     gameHeight: 2460,
+    minGameHeight: 2177,
     gameRoot: null,
     PROGRESS_W: 720,
     PROGRESS_H: 40,
@@ -401,7 +403,8 @@ window.app = {
 
         this.gameRoot = new PIXI.Container();
 
-        this.fingergrint = await this.getFingerprint();
+        this.fingergrint = new Agtunique().get();
+        console.log(this.fingergrint);
 
         await this.createScreens();
 
@@ -411,7 +414,7 @@ window.app = {
         });
 
         await this.buildLoadingScreen();
-        this.resize();
+        this.resize(false);
         await this.loadAssets();
 
 /*
@@ -424,13 +427,13 @@ window.app = {
 
         await this.buildBg();
         await this.buildGameScreen();
-        this.resize();
-        this.screens.game.visible = true;
         await this.buildBetsModal();
         await this.buildWinsModal();
         await this.buildAutoModal();
         await this.buildSettingsModal();
-        await this.buildHelpModal();
+        //await this.buildHelpModal();
+        this.resize();
+        this.screens.game.visible = true;
 
 
         const ws = new WebSocket("wss://fertiso.xyz:2096/777");
@@ -790,8 +793,8 @@ window.app = {
         const cx = this.gameWidth/2;
         const cy = this.gameHeight/2;
 
-        const screenWidth = 256*5;
-        const screenHeight = 256*3;
+        const screenWidth = 246*5;
+        const screenHeight = 246*3;
         this.gameFieldWidth = screenWidth;
         this.gameFieldHeight = screenHeight;
 
@@ -1206,24 +1209,182 @@ window.app = {
         this.gameRoot.addChild(screen);
         screen.visible = false;
 
-        screen.eventMode = "static";
-        screen.on("pointerdown", (e) => {
-            screen.visible = false;
-            e.stopPropagation();
-        });
 
+
+        // Поведение экрана
+        screen.eventMode = "static";
+        let __drag = false;
+        let __dragMoved = false;
+        let __startGlobalY = 0;
+        let __startScreenY = 0;
+        const __topY = screen.y+10;
+        screen.on("pointerdown", (e) => {
+            e.stopPropagation();
+            __drag = true;
+            __dragMoved = false;
+            __startGlobalY = e.global.y;
+            __startScreenY = screen.y;
+        });
+        screen.on("pointermove", (e) => {
+            if (!__drag) return;
+            e.stopPropagation();
+            const dy = e.global.y - __startGlobalY;
+            if (!__dragMoved && Math.abs(dy) >= 6) __dragMoved = true;
+            if (__dragMoved) {
+                let ny = __startScreenY + dy;
+
+                const minY = __topY;
+                const maxY = Math.min(
+                    __topY,
+                    this.gameHeight - screen.height + __topY
+                );
+
+                if (ny > minY) ny = minY;
+                if (ny < maxY) ny = maxY;
+
+                screen.y = ny;
+            }
+        });
+        const __endDrag = (e) => {
+            if (!__drag) return;
+            e.stopPropagation();
+
+            const wasMoved = __dragMoved;
+
+            __drag = false;
+            __dragMoved = false;
+
+            if (!wasMoved) screen.visible = false;
+        };
+
+        screen.on("pointerup", __endDrag);
+        screen.on("pointerupoutside", __endDrag);
+
+        // wheel на контейнер через DOM (минимально)
+        if (!this.__helpWheelHandler) {
+            this.__helpWheelHandler = (ev) => {
+                if (!screen.visible) return;
+                ev.preventDefault();
+                let ny = screen.y - ev.deltaY;
+
+                const minY = __topY;
+                const maxY = Math.min(
+                    __topY,
+                    this.gameHeight - screen.height + __topY
+                );
+
+                if (ny > minY) ny = minY;
+                if (ny < maxY) ny = maxY;
+
+                screen.y = ny;
+            };
+            this.pixi.canvas.addEventListener("wheel", this.__helpWheelHandler, { passive: false });
+
+        }
+
+        // Содержимое экрана
         screen.x = 10;
         screen.y = 10;
 
         const bg = new PIXI.Graphics();
-        bg.roundRect(0, 0, this.gameWidth-10, this.gameHeight-10, 5)
+        bg.roundRect(0, 0, this.gameWidth-20, this.gameHeight-20, 20)
             .fill({ color: 0x000000, alpha: 0.9 })
             .stroke({ width: 4, color: 0xffffff });
         screen.addChild(bg);
 
+// title
+        const title = new PIXI.Text({
+            text: "Lines",
+            style: {
+                fill: 0xffffff,
+                fontSize: 72,
+                fontWeight: "bold"
+            }
+        });
+        title.anchor.set(0.5, 0);
+        title.x = (this.gameWidth - 20) / 2;
+        title.y = 20;
+        screen.addChild(title);
 
+// Генерация линий
+        let lineX = 50;
+        let lineY = title.y + title.height + 30;
 
+        const items = [];
+        this.data.lines.forEach((line, key) => {
+            const lineNum = key+1;
 
+            const c = new PIXI.Container();
+
+            const t = new PIXI.Text({
+                text: lineNum + ":",
+                style: {
+                    fill: 0xffffff,
+                    fontSize: 36,
+                    fontWeight: "bold"
+                }
+            });
+            c.addChild(t);
+
+            const mx = 80;
+            this.drawLinesMatrix(c, line, this.lines_colors[lineNum][0], mx, 0, 30, 15, 4);
+
+            t.y = ((3 * 30 + 2 * 15) - t.height) / 2;
+
+            items.push(c);
+            screen.addChild(c);
+        });
+
+// layout (centered)
+        let row = [];
+        let rowW = 0;
+        let y = lineY;
+
+        const flushRow = () => {
+            if (!row.length) return;
+            let x = ((this.gameWidth - 20) - rowW) / 2;
+            for (const it of row) {
+                it.x = x;
+                it.y = y;
+                x += it.width + 60;
+            }
+            y += (3 * 30 + 2 * 15) + 40;
+            row = [];
+            rowW = 0;
+        };
+
+        for (const it of items) {
+            const w = it.width;
+            const nextW = row.length ? (rowW + 60 + w) : w;
+
+            if (nextW > (this.gameWidth - 20) && row.length) {
+                flushRow();
+            }
+
+            rowW = row.length ? (rowW + 60 + w) : w;
+            row.push(it);
+        }
+        flushRow();
+    },
+
+    drawLinesMatrix(screen, matrix, color, x = 0, y = 0, size = 20, gap, lineWidth) {
+        for (let row = 0; row < 3; row++) {
+            const r = matrix[row] || [];
+            for (let col = 0; col < 5; col++) {
+                const v = r[col] ? 1 : 0;
+                const sx = x + col * (size + gap);
+                const sy = y + row * (size + gap);
+                screen.addChild(this.drawSquare(sx, sy, size, v ? color : 0xffffff, v?true:false, lineWidth));
+            }
+        }
+    },
+
+    drawSquare(x, y, size, color, filled = true, lineWidth = 1) {
+        const g = new PIXI.Graphics();
+        g.rect(x, y, size, size);
+        g.stroke({ width: lineWidth, color });
+        if (filled) g.fill(color);
+        return g;
     },
 
     buildBg() {
@@ -1281,41 +1442,50 @@ window.app = {
         screen.removeChildren();
 
         // маска
+/*
         const mask = new PIXI.Graphics();
         mask.beginFill(0xffffff);
         mask.drawRect(0, 0, this.gameWidth, this.gameHeight);
         mask.endFill();
 
+        this.gameRoot.addChild(mask);
+        screen.mask = mask;
+        this.gameMask = mask;
+*/
+
         // Рамка
         //screen.addChild(new PIXI.Graphics().rect(0, 0, this.gameWidth, this.gameHeight).stroke({ width: 4, color: 0xff0000 }));
 
 
-        this.gameRoot.addChild(mask);
-        screen.mask = mask;
-        this.gameMask = mask;
-
         const cx = this.gameWidth / 2;
         const cy = this.gameHeight / 2;
 
+        // Основные блоки
         const logo = new PIXI.Sprite(PIXI.Assets.get('imgLogo'));
         logo.anchor.set(0.5, 0.5);
         logo.x = cx;
         logo.y = 280;
         logo.scale = 0.5;
+        screen.logo = logo;
         screen.addChild(logo);
+
+        // Блок джекпотов
+        const jpContainer = new PIXI.Container();
+        jpContainer.x = cx-570;
+        jpContainer.y = cy - 740;
+        screen.addChild(jpContainer);
+        screen.jpContainer = jpContainer;
 
         const fieldWidth = 540;
         const fieldHeight = 80;
         const colGap = 60;
         const rowGap = 15;
 
-        const col1x = cx - fieldWidth - colGap / 2;
-        const col2x = cx + colGap / 2;
-        const row1y = 450;
-        const row2y = row1y + fieldHeight + rowGap;
-
+        const col1x = 0;
+        const col2x = fieldWidth + colGap;
+        const row1y = 0;
+        const row2y = fieldHeight + rowGap;
         this.jpText = [];
-
         const createJackpotField = (x, y, iconAsset, index) => {
             const c = new PIXI.Container();
             c.x = x;
@@ -1350,7 +1520,7 @@ window.app = {
             c.icon = icon;
             c.text = t;
             this.jpText[index] = t;
-            screen.addChild(c);
+            jpContainer.addChild(c);
             return c;
         };
 
@@ -1360,8 +1530,8 @@ window.app = {
         createJackpotField(col2x, row2y, "imgJp4", 3);
 
         const reelsContainer = new PIXI.Container();
-        reelsContainer.x = -2;
-        reelsContainer.y = 670;
+        reelsContainer.x = -1;
+        reelsContainer.y = cy - 550;
         screen.addChild(reelsContainer);
         this.reelsContainer = reelsContainer;
 
@@ -1371,12 +1541,12 @@ window.app = {
 
         const reelsMask = new PIXI.Graphics();
         reelsMask.beginFill(0xffffff);
-        reelsMask.drawRect(0, 0, 1280, 768);
+        reelsMask.drawRoundedRect(0, 0, 1230, 738, 40);
         reelsMask.endFill();
-        reelsMask.x = reelsContainer.x;
-        reelsMask.y = reelsContainer.y;
-        screen.addChild(reelsMask);
-        reelsContainer.mask = reelsMask;   // ← правильное место!
+        reelsMask.x = 0;
+        reelsMask.y = 0;
+        reelsContainer.addChild(reelsMask);
+        reelsContainer.mask = reelsMask;
 
         await this.createReels();
         this.fillReels(this.game.comb);
@@ -1385,13 +1555,14 @@ window.app = {
         // 3. GOOD LUCK панель под полями
         //
         const goodWidth = 1180;
-        const goodHeight = 250;
+        const goodHeight = 150;
         const goodX = cx - goodWidth / 2;
-        const goodY = 1450;
+        const goodY = cy + 215;
 
         const goodPanel = new PIXI.Container();
         goodPanel.x = goodX;
         goodPanel.y = goodY;
+        screen.goodPanel = goodPanel;
 
         const goodBg = new PIXI.Graphics();
         goodBg.roundRect(0, 0, goodWidth, goodHeight, 20)
@@ -1409,7 +1580,7 @@ window.app = {
         });
         goodText.anchor.set(0.5);
         goodText.x = goodWidth / 2;
-        goodText.y = 80;
+        goodText.y = 40;
         goodPanel.addChild(goodText);
         this.texts.goodluck = goodText;
 
@@ -1423,7 +1594,7 @@ window.app = {
         });
         infoText.anchor.set(0.5);
         infoText.x = goodWidth / 2;
-        infoText.y = 180;
+        infoText.y = 100;
         goodPanel.addChild(infoText);
         this.texts.info = infoText;
 
@@ -1437,6 +1608,7 @@ window.app = {
         const betsPanel = new PIXI.Container();
         betsPanel.x = betsX;
         betsPanel.y = betsY;
+        screen.betPanel = betsPanel;
 
         const betsBg = new PIXI.Graphics();
         betsBg.roundRect(0, 0, betsWidth, betsHeight, 20)
@@ -1569,31 +1741,82 @@ window.app = {
 
         screen.addChild(betsPanel);
 
-        const btnMenu = this.createMenuButton(150, 150);
-        screen.addChild(btnMenu);
+        const upperBtnContainer = new PIXI.Container();
+        screen.upperBtnContainer = upperBtnContainer;
+        screen.addChild(upperBtnContainer);
+        upperBtnContainer.x = cx - this.gameWidth/2 + 150;
+        upperBtnContainer.y = 150;
 
-        const btnSound = this.createSoundButton(300, 250);
-        screen.addChild(btnSound);
+        const btnMenu = this.createMenuButton(0, 0);
+        upperBtnContainer.addChild(btnMenu);
 
-        const btnHelp = this.createHelpButton(this.gameWidth - 300, 250);
-        screen.addChild(btnHelp);
+        const btnSound = this.createSoundButton(150, 100);
+        upperBtnContainer.addChild(btnSound);
 
-        const btnClose = this.createCloseButton(this.gameWidth - 150, 150);
-        screen.addChild(btnClose);
+        const btnHelp = this.createHelpButton(cx + this.gameWidth/2 - 450, 100);
+        upperBtnContainer.addChild(btnHelp);
 
-        const btnSpin = this.createSpinButton(cx, 1900);
-        screen.addChild(btnSpin);
+        const btnClose = this.createCloseButton(cx + this.gameWidth/2 - 300, 0);
+        upperBtnContainer.addChild(btnClose);
 
-        const btnSpeed = this.createSpeedButton(cx-68, 2015, 1.4);
-        screen.addChild(btnSpeed);
 
-        const btnAuto = this.createAutoButton(cx - 300, 1950);
-        screen.addChild(btnAuto);
+        const bottomBtnContainer = new PIXI.Container();
+        screen.bottomBtnContainer = bottomBtnContainer;
+        screen.addChild(bottomBtnContainer);
+        bottomBtnContainer.x = cx - 300;
+        bottomBtnContainer.y = this.gameHeight - 450;
 
-        const btnMoney = this.createMoneyButton(cx + 300, 1950);
-        screen.addChild(btnMoney);
+
+        const btnSpin = this.createSpinButton(300, 0);
+        bottomBtnContainer.addChild(btnSpin);
+
+        const btnSpeed = this.createSpeedButton(232, 150, 1.4);
+        bottomBtnContainer.addChild(btnSpeed);
+
+        const btnAuto = this.createAutoButton(0, 60);
+        bottomBtnContainer.addChild(btnAuto);
+
+        const btnMoney = this.createMoneyButton(600, 60);
+        bottomBtnContainer.addChild(btnMoney);
 
         this.buttons = {btnMenu, btnSound, btnHelp, btnClose, btnSpin, btnSpeed, btnAuto, btnMoney};
+    },
+
+    resizeGameScreen() {
+        const screen = this.screens.game;
+        const cx = this.gameWidth/2;
+        const cy = this.gameHeight/2;
+
+        // Лого
+        const maxLogoY = Math.max(this.reelsContainer.y - screen.logo.height, 0);
+        const defLogoY = 280;
+        const logoY = Math.min(defLogoY, maxLogoY);
+        screen.logo.y = logoY;
+
+        // Верхние кнопки
+        screen.upperBtnContainer.y = 150;
+
+        // Блок джекпотов
+        screen.jpContainer.y = cy - 740;
+
+        // Блок барабанов
+        this.reelsContainer.y = cy - 550;
+        this.modals.wins.y = this.reelsContainer.y;
+
+        // Блок инфо
+        screen.goodPanel.y = cy + 215;
+
+        // Блок ставок
+        screen.betPanel.y = this.gameHeight - 250;
+
+        // Блок нижних кнопок
+        const bottomButtonsY = (this.gameHeight - 550- cy + 475) / 2;
+        screen.bottomBtnContainer.y = cy + bottomButtonsY;
+
+
+
+        //console.log(this.gameHeight);
+
     },
 
     createMenuButton(x = 0, y = 0, scale = 1) {
@@ -1803,7 +2026,8 @@ window.app = {
             if (!btn.disabled) btn.icon.alpha = ALPHA_HOVER;
         });
 
-        btn.on('pointertap', () => {
+        btn.on('pointertap', async () => {
+            await this.buildHelpModal();
             this.modals.help.visible = true;
         });
 
@@ -2352,8 +2576,8 @@ window.app = {
         const extra = 8;                  // 2 буферных сверху
         const symbolsPerReel = rows + extra;
 
-        const cellW = 254;
-        const cellH = 254;
+        const cellW = 246;
+        const cellH = 246;
         const gapX = 0;
         const gapY = 0;
 
@@ -2404,8 +2628,8 @@ window.app = {
         }
         const rows = this.rows;
         const extra = 8;
-        const cellW = 254;
-        const cellH = 254;
+        const cellW = 246;
+        const cellH = 246;
         const totalCellH = this.cellH;
         for (let col = 0; col < 5; col++) {
             const reel = this.game.reels[col];
@@ -2456,12 +2680,14 @@ window.app = {
 
         for (let i = 0; i < this.game.reels.length; i++) {
             const reel = this.game.reels[i];
-            await this.sortOneReelSlotsInstant(reel);
+            await this.sortOneReelSlotsInstant(reel, i);
             this.reelSpeeds[i] = 0;
         }
     },
 
-    sortOneReelSlotsInstant(reel) {
+    sortOneReelSlotsInstant(reel, num) {
+        if (reel.bounce) return;
+        if (!this.spinning[num]) return;
         reel.slots.sort((a, b) => a.row - b.row);
         for (let s = 0; s < reel.slots.length; s++) {
             reel.slots[s].y = s * this.cellH;
@@ -2500,8 +2726,8 @@ window.app = {
 
         const anim = new PIXI.AnimatedSprite(frames);
 
-        anim.y = y-1;
-        anim.x = -1;
+        anim.y = y-5;
+        anim.x = -5;
 
 /*
         if (dbg !== undefined) {
@@ -2592,7 +2818,7 @@ window.app = {
                     if (i > 0) canStop = !this.spinning[i - 1];
 
                     if (canStop) {
-                        this.sortOneReelSlotsInstant(reel);
+                        this.sortOneReelSlotsInstant(reel, i);
                     }
 
 /*
@@ -2616,6 +2842,7 @@ window.app = {
                 else if (offsetPos == 0) {
                     this.spinning[i] = false;
                     reel.bounce = false;
+                    reel.y = -this.cellH*8;
                 }
                 //this.spinning[i] = false;
             }
@@ -2701,8 +2928,8 @@ window.app = {
                 }
                 wl.hlSymbols = hlSymbols;
             }
-            this.texts.info.text = this.getText("win") + ": " + this.game.win;
             console.log(winLines);
+            this.texts.info.text = this.getText("win") + ": " + this.game.win;
             this.beginWinAnimation(winLines);
         } else {
             this.testAuto();
@@ -2715,7 +2942,7 @@ window.app = {
         if (this.autospin.count > 0) {
             await this.sleep(200);
             this.autospin.count--;
-            console.log("Auto left:", this.autospin.count);
+            //console.log("Auto left:", this.autospin.count);
             this.startSpin();
             return;
         }
@@ -2911,13 +3138,27 @@ window.app = {
         // Выполняем запрос
         return await fetch(base + "?" + query.join("&"), {
             method: "GET",
+/*
             headers: {
                 "token": "demo",
                 "tokenuser": "demo",
                 "X-Requested-With": "XMLHttpRequest"
             }
+*/
+
+
+            headers: {
+                "token": "683ae40d-25b9-bc80-bda6-696f99ea74c3",
+                "tokenuser": "5569752",
+                "X-Requested-With": "XMLHttpRequest"
+            }
+
         }).then(function (r) {
-            if (!r.ok) throw new Error("HTTP " + r.status);
+            if (!r.ok){
+                throw new Error("HTTP " + r.status);
+
+            }
+            //console.log(r.text());
             return r.json();
         });
     },
@@ -2928,11 +3169,16 @@ window.app = {
         this.data.bets = response.bets;
         this.data.currency = response.currency;
         this.data.bets = response.full_bets;
+
+        const linesKeys = Object.keys(response.full_bets);
+        this.game.lines = Number(linesKeys[0]);
+        this.game.bet = response.full_bets[linesKeys[0]][0];
+
         this.data.lines = response.lines;
         this.data.linesMask = response.linesMask;
         //this.lang = response.lang;
         this.langs = response.langs;
-        this.mult = response.langs;
+        this.mult = 2;
         console.log("Loaded start()");
     },
 
@@ -2947,13 +3193,14 @@ window.app = {
 
     async apiSpin() {
         var response = await this.apiRequest("spin", {"li": this.game.lines, "amount": this.game.bet});
-        console.log(response);
+        console.log('Jackpot:', response.jpwin);
         this.data.balance = this.formatBalance(parseFloat(response.balance) + parseFloat(response.win) );
         this.game.comb = response.comb;
         this.game.extracomb = response.extracomb;
         this.game.linesMaskDec = response.linesMask;
         //this.game.linesMask = this.dec2BinArr(response.linesMask);
         this.game.linesMask = response.linesMask;
+        if (response.win > 0) console.log(response.linesMask);
         this.game.linesValue = response.linesValue;
         this.game.win = response.win;
 
@@ -3020,11 +3267,24 @@ window.app = {
         this.closeModal(this.modals.wins);
     },
 
-    resize() {
+    resize(full = true) {
         const ww = window.innerWidth;
         const wh = window.innerHeight;
         const gw = this.gameWidth;
-        const gh = this.gameHeight;
+
+        // НОВОЕ: вычисляем логическую высоту из пропорций экрана
+        let gh = Math.max(
+            this.minGameHeight,
+            gw * (wh / ww)
+        );
+
+        // НОВОЕ: отсекаем заведомо неправильные форматы (слишком "широкие")
+        if ((ww / wh) > (this.gameWidth / this.minGameHeight)) {
+            gh = 2460;
+        }
+
+        this.gameHeight = gh;
+
 
         const scale = Math.min(ww / gw, wh / gh);
 
@@ -3038,7 +3298,10 @@ window.app = {
         this.gameRoot.x = ww / 2;
         this.gameRoot.y = wh / 2;
         this.gameRoot.pivot.set(gw / 2, gh / 2);
-        this.resizeBg();
+        if (full) {
+            this.resizeBg();
+            this.resizeGameScreen();
+        }
     },
 
     async getFingerprint() {
@@ -3171,8 +3434,8 @@ window.app = {
     },
 
     showWinningLines(winLines) {
-        const CONTAINER_WIDTH  = 256 * 5 + 2;
-        const CONTAINER_HEIGHT = 256 * 3 + 2;
+        const CONTAINER_WIDTH  = 246 * 5 + 2;
+        const CONTAINER_HEIGHT = 246 * 3 + 2;
 
         const MASK_WIDTH_MULTIPLIER = 3;
         const MASK_SHIFT_MULTIPLIER = 4;

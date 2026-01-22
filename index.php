@@ -36,6 +36,7 @@ html, body {
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     <script src="https://unpkg.com/pixi.js/dist/browser/pixi.min.js"></script>
     <script src="pixi.min.js?v=<?=time()?>"></script>
+    <script src="src/agtunique.js?v=<?=time()?>"></script>
     <script src="src/main.js?v=<?=time()?>"></script>
 </body>
 </html>
