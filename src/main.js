@@ -1,14 +1,5 @@
 window.app = {
     assets: [
-        {"name": "animSymbolBoots",     "path": "assets/sprites/0-boots.json"},
-        {"name": "animSymbolPick",      "path": "assets/sprites/1-pick.json"},
-        {"name": "animSymbolHelmet",    "path": "assets/sprites/2-helmet.json"},
-        {"name": "animSymbolTnt",       "path": "assets/sprites/3-tnt.json"},
-        {"name": "animSymbolGold",      "path": "assets/sprites/4-gold.json"},
-        {"name": "animSymbolCart",      "path": "assets/sprites/5-cart.json"},
-        {"name": "animSymbolGnome",     "path": "assets/sprites/6-wild.json"},
-        {"name": "animSymbolScatter",   "path": "assets/sprites/7-scatter.json"},
-
         {"name": "imgNumbers",          "path": "assets/sprites/numbers.json"},
         {"name": "winTexts",            "path": "assets/sprites/win_title.json"},
 
@@ -61,11 +52,28 @@ window.app = {
         {"name": "imgJp3",              "path": "assets/images/img3.webp"},
         {"name": "imgJp4",              "path": "assets/images/img4.webp"},
 
+        {"name": "imgBgMain",           "path": "assets/images/bgMain.png"},
+
+
+
+
+
+
+
+
+
         //{ "name": "sfxMap",             "path": "assets/sound/sprite.json" },
         //{ "name": "sfxMain",            "path": "assets/sound/mainSounds.mp3"},
 
-        //{"name": "imgLogo",           "path": "assets/images/logo.png"},
-        {"name": "imgBgMain",           "path": "assets/images/bgMain.png"}
+        {"name": "animSymbolBoots",     "path": "assets/sprites/0-boots.json"},
+        {"name": "animSymbolPick",      "path": "assets/sprites/1-pick.json"},
+        {"name": "animSymbolHelmet",    "path": "assets/sprites/2-helmet.json"},
+        {"name": "animSymbolTnt",       "path": "assets/sprites/3-tnt.json"},
+        {"name": "animSymbolGold",      "path": "assets/sprites/4-gold.json"},
+        {"name": "animSymbolCart",      "path": "assets/sprites/5-cart.json"},
+        {"name": "animSymbolGnome",     "path": "assets/sprites/6-wild.json"},
+        {"name": "animSymbolScatter",   "path": "assets/sprites/7-scatter.json"}
+
     ],
     lines_colors: [
         ['#ffc063', '#faf17a'], //scatter
@@ -361,8 +369,8 @@ window.app = {
         3: ["animSymbolTnt"],
         4: ["animSymbolGold"],
         5: ["animSymbolCart"],
-        6: ["animSymbolGnome"],
-        7: ["animSymbolScatter"]
+        6: ["animSymbolScatter"],
+        7: ["animSymbolGnome"]
     },
     winMap: {
         10: "big",
@@ -400,6 +408,8 @@ window.app = {
         this.game.speed = this.lsGet('game', 'speed', 1);
         this.lang = this.lsGet('data', 'lang', 'en');
         this.sound = this.lsGet('data', 'sound', true);
+        this.game.lines = this.lsGet('game', 'lines', 1);
+        this.game.bet = this.lsGet('game', 'bet', 1);
 
         this.gameRoot = new PIXI.Container();
 
@@ -424,6 +434,8 @@ window.app = {
 */
 
         this.screens.loading.visible = false;
+
+        this.initFullscreen();
 
         await this.buildBg();
         await this.buildGameScreen();
@@ -470,6 +482,8 @@ window.app = {
 
             return map;
         })();
+
+        //this.initFullscreen();
 
         // Переход на экран игры (или другой)
         //this.showScreen('game');
@@ -983,7 +997,7 @@ window.app = {
         screen.visible = false;
 
         screen.eventMode = "static";
-        screen.on("pointerdown", (e) => {
+        screen.on("pointertap", (e) => {
             screen.visible = false;
             e.stopPropagation();
         });
@@ -992,15 +1006,15 @@ window.app = {
         screen.y = 10;
 
         const bg = new PIXI.Graphics();
-        bg.roundRect(0, 0, this.gameWidth-10, this.gameHeight-10, 5)
+        bg.roundRect(0, 0, this.gameWidth-20, this.gameHeight-20, 5)
             .fill({ color: 0x000000, alpha: 0.9 })
             .stroke({ width: 4, color: 0xffffff });
         screen.addChild(bg);
 
 
 
-        const padding = 20;
-        const leftColWidth = 220;
+        const padding = 40;
+        const leftColWidth = 320;
         const rowHeight = 120;
 
         const leftColX = padding;
@@ -1014,7 +1028,7 @@ window.app = {
                 text,
                 style: {
                     fill: "#ffffff",
-                    fontSize: 28,
+                    fontSize: 38,
                     fontWeight: "bold"
                 }
             });
@@ -1038,7 +1052,7 @@ window.app = {
             btn.cursor = "pointer";
 
             const bg = new PIXI.Graphics();
-            bg.roundRect(0, 0, 100, 50, 6)
+            bg.roundRect(0, 0, 150, 80, 6)
                 .fill({ color: active ? 0x444444 : 0x222222 })
                 .stroke({ width: 3, color: active ? 0xffffff : 0x777777 });
             btn.addChild(bg);
@@ -1047,7 +1061,7 @@ window.app = {
                 text: label,
                 style: {
                     fill: active ? "#ffffff" : "#aaaaaa",
-                    fontSize: 22,
+                    fontSize: 32,
                     compilation: true
                 }
             });
@@ -1073,7 +1087,7 @@ window.app = {
 
         makeToggleButton(
             "OFF",
-            rightColX + 120,
+            rightColX + 180,
             rowY + 30,
             this.sound === false,
             () => { this.sound = false; }
@@ -1089,7 +1103,7 @@ window.app = {
 
         makeToggleButton(
             "OFF",
-            rightColX + 120,
+            rightColX + 180,
             rowY + rowHeight + 30,
             this.fullscreen === false,
             () => { this.fullscreen = false; }
@@ -1099,7 +1113,7 @@ window.app = {
         let x = rightColX;
         let y = rowY + rowHeight * 2 + 10;
 
-        const gap = 12;
+        const gap = 20;
         const btnSize = 100;
         const maxX = this.gameWidth - padding - btnSize;
 
@@ -2093,6 +2107,11 @@ window.app = {
             if (!btn.disabled) btn.icon.alpha = ALPHA_CLICKED;
         });
 
+        btn.on('pointertap', () => {
+            if (!btn.disabled) btn.icon.alpha = ALPHA_CLICKED;
+            this.toggleFullscreen();
+        });
+
         btn.on('pointerup', () => {
             if (!btn.disabled) {
                 btn.icon.alpha = ALPHA_HOVER;
@@ -2877,13 +2896,22 @@ window.app = {
         this.data.balanceText.text = this.formatBalance(this.data.balance);
         this.texts.goodluck.text = this.getText("default");
         if (this.game.win > 0) {
-            // 1. Индексы ненулевых линий
+            this.data.lastWinText.text = this.formatBalance(this.game.win);
+
+            // Проверяем scatter
+            let scatter = null;
+            if (this.game.linesMask[0] > 0) {
+
+            }
+
+
+            // Индексы ненулевых линий
             const activeIndexes = [];
             for (let i = 1; i <= this.game.linesMask.length; i++) {
                 if (this.game.linesMask[i] > 0) activeIndexes.push(i);
             }
 
-            // 2. Формируем массив данных по линиям
+            // Формируем массив данных по линиям
             const winLines = [];
             for (let idx of activeIndexes) {
                 const maskBin = this.dec2Bin(this.game.linesMask[idx]); // "11100" например
@@ -2930,7 +2958,7 @@ window.app = {
             }
             console.log(winLines);
             this.texts.info.text = this.getText("win") + ": " + this.game.win;
-            this.beginWinAnimation(winLines);
+            this.beginWinAnimation(winLines, scatter);
         } else {
             this.testAuto();
         }
@@ -3171,9 +3199,12 @@ window.app = {
         this.data.bets = response.full_bets;
 
         const linesKeys = Object.keys(response.full_bets);
-        this.game.lines = Number(linesKeys[0]);
-        this.game.bet = response.full_bets[linesKeys[0]][0];
-
+        if (!response.full_bets?.[this.game.lines]?.includes(this.game.bet)) {
+            this.game.lines = Number(linesKeys[0]);
+            this.game.bet = response.full_bets[linesKeys[0]][0];
+            this.lsSet("game", "lines", this.game.lines);
+            this.lsSet("game", "bet", this.game.bet);
+        }
         this.data.lines = response.lines;
         this.data.linesMask = response.linesMask;
         //this.lang = response.lang;
@@ -3255,11 +3286,11 @@ window.app = {
         }
     },
 
-    beginWinAnimation(winLines) {
+    beginWinAnimation(winLines, scatter) {
         this.game.winAnimation = true;
         this.openModal(this.modals.wins);
         this.animateWin(this.game.win, this.winNumber, 5000, 0.8);
-        this.showWinningLines(winLines);
+        this.showWinningLines(winLines, scatter);
     },
 
     endWinAnimation() {
@@ -3302,81 +3333,6 @@ window.app = {
             this.resizeBg();
             this.resizeGameScreen();
         }
-    },
-
-    async getFingerprint() {
-        // 1. Уже есть сохранённый ID?
-        const saved = localStorage.getItem("fingerprint");
-        if (saved) return saved;
-
-        // 2. Собираем данные
-        const canvas = document.createElement("canvas");
-        const ctx = canvas.getContext("2d");
-        ctx.textBaseline = "top";
-        ctx.font = "16px Arial";
-        ctx.fillText("fingerprint_test_string", 2, 2);
-        const canvasFP = canvas.toDataURL();
-
-        let gpu = "";
-        try {
-            const gl = canvas.getContext("webgl");
-            const ext = gl && gl.getExtension("WEBGL_debug_renderer_info");
-            if (ext) gpu = gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) || "";
-        } catch (e) {}
-
-        const rawData = [
-            navigator.userAgent || "",
-            navigator.language || "",
-            navigator.languages ? navigator.languages.join(",") : "",
-            navigator.platform || "",
-            navigator.hardwareConcurrency || "",
-            Intl.DateTimeFormat().resolvedOptions().timeZone || "",
-            `${screen.width}x${screen.height}x${(window.devicePixelRatio || 1)}`,
-            gpu,
-            canvasFP
-        ].join("||");
-
-        // 3. ХП — работает везде (fallback)
-        function simpleHash(str) {
-            let hash = 5381;
-            for (let i = 0; i < str.length; i++) {
-                hash = ((hash << 5) + hash) + str.charCodeAt(i);
-                hash |= 0;
-            }
-            return (hash >>> 0).toString(16);
-        }
-
-        // 4. Попытка использовать crypto.subtle (HTTPS)
-        async function hashCrypto(data) {
-            try {
-                if (
-                    window.crypto &&
-                    window.crypto.subtle &&
-                    typeof window.crypto.subtle.digest === "function"
-                ) {
-                    const enc = new TextEncoder().encode(data);
-                    const buf = await window.crypto.subtle.digest("SHA-256", enc);
-                    return [...new Uint8Array(buf)]
-                        .map(x => x.toString(16).padStart(2, "0"))
-                        .join("");
-                }
-            } catch (e) {
-                // console.log("crypto.subtle not available:", e);
-            }
-            return null;
-        }
-
-        // 5. Если есть crypto — используем SHA256, иначе simpleHash
-        let fingerprint = await hashCrypto(rawData);
-        if (!fingerprint) {
-            // FALLBACK ДЛЯ HTTP
-            fingerprint = simpleHash(rawData);
-        }
-
-        // 6. Сохраняем
-        localStorage.setItem("fingerprint", fingerprint);
-
-        return fingerprint;
     },
 
     drawSmoothLine(points, color = "gold", width = 10) {
@@ -3653,7 +3609,180 @@ window.app = {
         this.texts.linesTitle.text = this.getText("lines");
         this.texts.betsTitle.text = this.getText("bet");
         this.texts.lastWinTitle.text = this.getText("last_win");
+    },
+
+
+
+
+
+    // === FULLSCREEN (mobile-first) ===
+    initFullscreen() {
+        // Контейнер, внутри которого живёт canvas Pixi (у вас: div#root)
+        this.fullscreenRootEl = document.getElementById('root');
+
+        // если root не найден — ничего не ломаем
+        if (!this.fullscreenRootEl) {
+            this.fullscreenRootEl = document.documentElement;
+        }
+
+        // слушатели изменений native fullscreen (android/desktop)
+        document.addEventListener('fullscreenchange', () => {
+            this.onFullscreenChanged();
+        });
+
+        document.addEventListener('webkitfullscreenchange', () => {
+            this.onFullscreenChanged();
+        });
+
+        // на мобилках смена ориентации/высоты viewport тоже важна
+        window.addEventListener('resize', () => {
+            // не спамим лишним full-перелэйаутом, но ваш resize должен отработать
+            this.resize(true);
+            this.updateFullscreenButtonState();
+        });
+
+        this.updateFullscreenButtonState();
+    },
+
+    isIOS() {
+        // достаточно надёжно для практики
+        return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    },
+
+    canNativeFullscreen(el) {
+        return !!(el && (el.requestFullscreen || el.webkitRequestFullscreen));
+    },
+
+    isNativeFullscreen() {
+        return !!(document.fullscreenElement || document.webkitFullscreenElement);
+    },
+
+    isPseudoFullscreen() {
+        const el = this.fullscreenRootEl;
+        return !!(el && el.classList && el.classList.contains('app-fullscreen'));
+    },
+
+    enterPseudoFullscreen() {
+        const el = this.fullscreenRootEl;
+        if (!el || !el.classList) return;
+        el.classList.add('app-fullscreen');
+    },
+
+    exitPseudoFullscreen() {
+        const el = this.fullscreenRootEl;
+        if (!el || !el.classList) return;
+        el.classList.remove('app-fullscreen');
+    },
+
+    enterNativeFullscreen() {
+        const el = this.fullscreenRootEl;
+        if (!el) return;
+
+        if (el.requestFullscreen) {
+            return el.requestFullscreen();
+        }
+        if (el.webkitRequestFullscreen) {
+            return el.webkitRequestFullscreen();
+        }
+    },
+
+    exitNativeFullscreen() {
+        if (document.exitFullscreen) {
+            return document.exitFullscreen();
+        }
+        if (document.webkitExitFullscreen) {
+            return document.webkitExitFullscreen();
+        }
+    },
+
+    isFullscreenOn() {
+        // “включено” = native fullscreen или pseudo fullscreen
+        return this.isNativeFullscreen() || this.isPseudoFullscreen();
+    },
+
+    toggleFullscreen() {
+        // iOS: только pseudo
+        if (this.isIOS()) {
+            if (!this.isPseudoFullscreen()) {
+                this.enterPseudoFullscreen();
+            } else {
+                this.exitPseudoFullscreen();
+            }
+
+            // после смены класса надо дать браузеру применить layout
+            setTimeout(() => {
+                this.resize(true);
+                this.updateFullscreenButtonState();
+            }, 0);
+
+            return;
+        }
+
+        // не iOS: пробуем native, иначе fallback на pseudo
+        if (this.canNativeFullscreen(this.fullscreenRootEl)) {
+            if (!this.isNativeFullscreen()) {
+                Promise.resolve(this.enterNativeFullscreen()).finally(() => {
+                    // подстраховка (основное — fullscreenchange)
+                    setTimeout(() => {
+                        this.resize(true);
+                        this.updateFullscreenButtonState();
+                    }, 0);
+                });
+            } else {
+                Promise.resolve(this.exitNativeFullscreen()).finally(() => {
+                    setTimeout(() => {
+                        this.resize(true);
+                        this.updateFullscreenButtonState();
+                    }, 0);
+                });
+            }
+            return;
+        }
+
+        // fallback: pseudo
+        if (!this.isPseudoFullscreen()) {
+            this.enterPseudoFullscreen();
+        } else {
+            this.exitPseudoFullscreen();
+        }
+
+        setTimeout(() => {
+            this.resize(true);
+            this.updateFullscreenButtonState();
+        }, 0);
+    },
+
+    onFullscreenChanged() {
+        // вызывается на fullscreenchange/webkitfullscreenchange
+        this.resize(true);
+        this.updateFullscreenButtonState();
+    },
+
+    updateFullscreenButtonState() {
+        // ВАЖНО: здесь я не угадываю вашу структуру кнопки.
+        // Но у вас подход такой: btn.disable/enable + alpha + иконки.
+        // Поэтому делаю максимально безопасно: если кнопка есть — обновим её визуально.
+        const btn = this.btns ? this.btns.fullscreen : null;
+        if (!btn) return;
+
+        const on = this.isFullscreenOn();
+
+        // минимально-визуально: альфа/или флаг состояния
+        btn.isOn = on;
+
+        // Если у кнопки есть методы enable/disable или кастомная подсветка — не ломаем.
+        // Просто подправим alpha, если она у вас используется.
+        if (typeof btn.alpha === 'number') {
+            btn.alpha = on ? 1 : 0.85;
+        }
+
+        // Если у кнопки есть иконки двух состояний — вы потом сюда подцепите.
+        // Например:
+        // if (btn.iconOn) btn.iconOn.visible = on;
+        // if (btn.iconOff) btn.iconOff.visible = !on;
     }
+
+
 };
 
 window.addEventListener("DOMContentLoaded", () => {

@@ -27,6 +27,16 @@ html, body {
 
     z-index: 1; /* поверх фона */
 }
+.app-fullscreen {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100vw;
+    height: 100dvh;      /* важно: dvh для мобильных */
+    overflow: hidden;
+    z-index: 999999;
+    background: #000;
+}
     </style>
 
 </head>

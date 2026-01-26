@@ -29,7 +29,7 @@ curl_setopt($ch, CURLOPT_USERPWD, 'user1:432');
 // Передаём нужные заголовки
 
 curl_setopt($ch, CURLOPT_HTTPHEADER, [
-    "token: 6b878172-667b-5c8d-d525-696f9946defa",
+    "token: afc1f6d0-8b95-02dd-6d58-6976c98cf81b",
     "tokenuser: 5569752",
     "X-Requested-With: XMLHttpRequest"
 ]);
