@@ -54,6 +54,14 @@ window.app = {
 
         {"name": "imgBgMain",           "path": "assets/images/bgMain.png"},
 
+        {"name": "imgSymbolBoots",     "path": "assets/images/symbols/boots.png"},
+        {"name": "imgSymbolPick",      "path": "assets/images/symbols/pick.png"},
+        {"name": "imgSymbolHelmet",    "path": "assets/images/symbols/helmet.png"},
+        {"name": "imgSymbolTnt",       "path": "assets/images/symbols/tnt.png"},
+        {"name": "imgSymbolGold",      "path": "assets/images/symbols/gold.png"},
+        {"name": "imgSymbolCart",      "path": "assets/images/symbols/cart.png"},
+        {"name": "imgSymbolGnome",     "path": "assets/images/symbols/wild.png"},
+        {"name": "imgSymbolScatter",   "path": "assets/images/symbols/scatter.png"},
 
 
 
@@ -399,12 +407,6 @@ window.app = {
 
         document.getElementById('root').appendChild(this.pixi.canvas);
 
-        // ресайз
-        window.addEventListener('resize', () => this.resize());
-        window.addEventListener('orientationchange', () => {
-            setTimeout(() => this.resize(), 200);
-        });
-
         this.game.speed = this.lsGet('game', 'speed', 1);
         this.lang = this.lsGet('data', 'lang', 'en');
         this.sound = this.lsGet('data', 'sound', true);
@@ -414,7 +416,6 @@ window.app = {
         this.gameRoot = new PIXI.Container();
 
         this.fingergrint = new Agtunique().get();
-        console.log(this.fingergrint);
 
         await this.createScreens();
 
@@ -427,15 +428,7 @@ window.app = {
         this.resize(false);
         await this.loadAssets();
 
-/*
-        const keys = Object.keys(this.langs).sort();
-        console.log("Langs count:", keys.length);
-        console.log("Langs keys:", keys);
-*/
-
         this.screens.loading.visible = false;
-
-        this.initFullscreen();
 
         await this.buildBg();
         await this.buildGameScreen();
@@ -444,8 +437,6 @@ window.app = {
         await this.buildAutoModal();
         await this.buildSettingsModal();
         //await this.buildHelpModal();
-        this.resize();
-        this.screens.game.visible = true;
 
 
         const ws = new WebSocket("wss://fertiso.xyz:2096/777");
@@ -483,14 +474,16 @@ window.app = {
             return map;
         })();
 
-        //this.initFullscreen();
+        // ресайз
+        window.addEventListener('resize', () => this.resize());
+        window.addEventListener('orientationchange', () => {
+            setTimeout(() => this.resize(), 200);
+        });
 
-        // Переход на экран игры (или другой)
-        //this.showScreen('game');
-        //this.openModal(this.modals.wins);
+        this.initFullscreen();
+        this.resize();
+        this.screens.game.visible = true;
 
-
-        //this.showScreen('loading');
     },
 
     // создаём экраны (контейнеры)
@@ -769,6 +762,8 @@ window.app = {
                     () => {
                         this.game.lines = lineKey;
                         this.game.bet = betValue;
+                        this.lsSet("game", "lines", this.game.lines);
+                        this.lsSet("game", "bet", this.game.bet);
                         renderBets(lineKey);  // обновляем выделение
                         this.data.betText.text = betValue;
                         this.data.linesText.text = lineKey;
@@ -2899,11 +2894,26 @@ window.app = {
             this.data.lastWinText.text = this.formatBalance(this.game.win);
 
             // Проверяем scatter
-            let scatter = null;
+            let scatter = [];
+            const hlScatter = [];
             if (this.game.linesMask[0] > 0) {
-
+                const scBin = this.dec2Bin(this.game.linesMask[0], 15);
+                let c = 0;
+                let r = 0;
+                for (let num = 0; num < 15; num++) {
+                    if (scBin[num] == 1) {
+                        const sym = this.game.symbols[r][c];
+                        hlScatter.push(sym);
+                    }
+                    c++;
+                    if (c >= 5) {
+                        c = 0;
+                        r++;
+                    }
+                }
+                scatter.hlSymbols = hlScatter;
+                scatter.value = this.game.linesValue[0];
             }
-
 
             // Индексы ненулевых линий
             const activeIndexes = [];
@@ -2957,7 +2967,7 @@ window.app = {
                 wl.hlSymbols = hlSymbols;
             }
             console.log(winLines);
-            this.texts.info.text = this.getText("win") + ": " + this.game.win;
+            this.texts.info.text = this.getText("win") + ": " + this.formatBalance(this.game.win);
             this.beginWinAnimation(winLines, scatter);
         } else {
             this.testAuto();
@@ -3249,12 +3259,12 @@ window.app = {
         }
     },
 
-    dec2Bin(n) {
+    dec2Bin(n, length = 5) {
         let b = Number(n).toString(2);   // преобразуем в двоичное
-        if (b.length > 5) {
-            b = b.slice(-5);             // обрезаем слева
+        if (b.length > length) {
+            b = b.slice(-length);             // обрезаем слева
         } else {
-            b = b.padStart(5, "0");      // добавляем нули слева
+            b = b.padStart(length, "0");      // добавляем нули слева
         }
         return b;
     },
@@ -3389,7 +3399,7 @@ window.app = {
         return points;
     },
 
-    showWinningLines(winLines) {
+    showWinningLines(winLines,scatterData) {
         const CONTAINER_WIDTH  = 246 * 5 + 2;
         const CONTAINER_HEIGHT = 246 * 3 + 2;
 
@@ -3402,7 +3412,8 @@ window.app = {
         const parent = this.game.linesCanvas;
 
         let currentIndex = 0;
-
+        const hasLines   = Array.isArray(winLines) && winLines.length > 0;
+        const hasScatter = scatterData && Array.isArray(scatterData.hlSymbols) && scatterData.hlSymbols.length > 0;
 
         // === ПРОЛОГ: все линии сразу под одной маской (2 прохода)
         const runIntroAnimation = (onComplete) => {
@@ -3435,6 +3446,15 @@ window.app = {
                 introContainer.addChild(g);
             }
 
+            // ВКЛ: анимация символов скаттера на время пролога
+            if (scatterData && scatterData.hlSymbols && Array.isArray(scatterData.hlSymbols)) {
+                for (const sym of scatterData.hlSymbols) {
+                    if (sym && typeof sym.animation === "function") {
+                        sym.animation(true);
+                    }
+                }
+            }
+
             const startX = -CONTAINER_WIDTH * MASK_SHIFT_MULTIPLIER;
             const endX   =  CONTAINER_WIDTH * MASK_SHIFT_MULTIPLIER;
 
@@ -3464,6 +3484,15 @@ window.app = {
                             if (this.winNumber) {
                                 this.winNumber.removeChildren();
                             }
+
+                            // ВЫКЛ: анимация символов скаттера после пролога
+                            if (scatterData && scatterData.hlSymbols && Array.isArray(scatterData.hlSymbols)) {
+                                for (const sym of scatterData.hlSymbols) {
+                                    if (sym && typeof sym.animation === "function") {
+                                        sym.animation(false);
+                                    }
+                                }
+                            }
                             onComplete();
                         }
                     }
@@ -3478,12 +3507,41 @@ window.app = {
             animatePass();
         };
 
+        const runScatterCycle = (onComplete) => {
+            if (scatterData && scatterData.hlSymbols && Array.isArray(scatterData.hlSymbols)) {
+                for (const sym of scatterData.hlSymbols) {
+                    if (sym && typeof sym.animation === "function") {
+                        sym.animation(true);
+                    }
+                }
+                this.texts.info.text = this.getText("scatter") + " - " + this.getText("win") + " " + this.formatBalance(scatterData.value);
+
+                setTimeout(() => {
+                    for (const sym of scatterData.hlSymbols) {
+                        if (sym && typeof sym.animation === "function") {
+                            sym.animation(false);
+                        }
+                    }
+                    if (!this.game.winAnimation) return;
+                    setTimeout(onComplete, 0);
+                }, ANIMATION_DURATION);
+
+                return;
+            }
+
+            setTimeout(onComplete, 0);
+        };
+
+
         const showNextLine = () => {
 
             this.texts.info.text = "";
 
-            if (currentIndex >= winLines.length) {
+
+            if (winLines.length < 1 || currentIndex >= winLines.length) {
                 currentIndex = 0;
+                runScatterCycle(showNextLine);
+                return;
             }
 
             if (!this.game.winAnimation) return;
@@ -3491,8 +3549,7 @@ window.app = {
             const lineData = winLines[currentIndex];
             currentIndex++;
 
-            this.texts.info.text = this.getText("line") + " " + lineData.lineNum + " - " + this.getText("win") + " " + Number(lineData.value).toFixed(2);;
-
+            this.texts.info.text = this.getText("line") + " " + lineData.lineNum + " - " + this.getText("win") + " " + Number(lineData.value).toFixed(2);
 
             // === 1. Контейнер линии
             const lineContainer = new PIXI.Container();
@@ -3578,7 +3635,7 @@ window.app = {
                 this.winAnimation = false;
                 this.testAuto();
             } else {
-                showNextLine();
+                runScatterCycle(showNextLine);
             }
         });
     },
