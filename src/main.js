@@ -1,5 +1,8 @@
 window.app = {
     assets: [
+        { "name": "sfxMap",             "path": "assets/sound/sprite.json" },
+        { "name": "sfxMain",            "path": "assets/sound/mainSounds.mp3"},
+
         {"name": "imgNumbers",          "path": "assets/sprites/numbers.json"},
         {"name": "winTexts",            "path": "assets/sprites/win_title.json"},
 
@@ -64,14 +67,12 @@ window.app = {
         {"name": "imgSymbolScatter",   "path": "assets/images/symbols/scatter.png"},
 
 
+        {"_separator": "heavy"},
 
 
 
 
 
-
-        //{ "name": "sfxMap",             "path": "assets/sound/sprite.json" },
-        //{ "name": "sfxMain",            "path": "assets/sound/mainSounds.mp3"},
 
         {"name": "animSymbolBoots",     "path": "assets/sprites/0-boots.json"},
         {"name": "animSymbolPick",      "path": "assets/sprites/1-pick.json"},
@@ -366,6 +367,7 @@ window.app = {
     currentScreen: null,
     gameTime: 2500,
     sound: true,
+    soundInst: null,
     gameNameApi: "livefruits",
 //    gameNameApi: "supabets",
     gameName: "Ultraminer",
@@ -380,6 +382,16 @@ window.app = {
         6: ["animSymbolScatter"],
         7: ["animSymbolGnome"]
     },
+    symbolImgMap: {
+        0: ["imgSymbolBoots"],
+        1: ["imgSymbolPick"],
+        2: ["imgSymbolHelmet"],
+        3: ["imgSymbolTnt"],
+        4: ["imgSymbolGold"],
+        5: ["imgSymbolCart"],
+        6: ["imgSymbolScatter"],
+        7: ["imgSymbolGnome"]
+    },
     winMap: {
         10: "big",
         20: "mega",
@@ -388,8 +400,9 @@ window.app = {
     },
     gameWidth: 1230,
     gameHeight: 2460,
-    minGameHeight: 2177,
+    minGameHeight: 2000,
     gameRoot: null,
+    paytable: [],
     PROGRESS_W: 720,
     PROGRESS_H: 40,
 
@@ -405,6 +418,8 @@ window.app = {
             resolution: window.devicePixelRatio || 1
         });
 
+        this.soundInit();
+
         document.getElementById('root').appendChild(this.pixi.canvas);
 
         this.game.speed = this.lsGet('game', 'speed', 1);
@@ -414,7 +429,6 @@ window.app = {
         this.game.bet = this.lsGet('game', 'bet', 1);
 
         this.gameRoot = new PIXI.Container();
-
         this.fingergrint = new Agtunique().get();
 
         await this.createScreens();
@@ -424,9 +438,16 @@ window.app = {
             src: 'assets/images/logo.png'
         });
 
-        await this.buildLoadingScreen();
         this.resize(false);
+        await this.buildLoadingScreen();
         await this.loadAssets();
+
+        await this.startGame();
+
+        //this.modals.paytable.visible = true;
+    },
+
+    async startGame() {
 
         this.screens.loading.visible = false;
 
@@ -436,8 +457,8 @@ window.app = {
         await this.buildWinsModal();
         await this.buildAutoModal();
         await this.buildSettingsModal();
-        //await this.buildHelpModal();
-
+        await this.buildHelpModal();
+        await this.buildPaytableModal();
 
         const ws = new WebSocket("wss://fertiso.xyz:2096/777");
         this.ws = ws;
@@ -482,7 +503,14 @@ window.app = {
 
         this.initFullscreen();
         this.resize();
-        this.screens.game.visible = true;
+
+        if (this.isMobile) {
+            await this.buildPreloaderScreen();
+            this.screens.preloader.visible = true;
+        } else {
+            this.screens.game.visible = true;
+        }
+
 
     },
 
@@ -595,18 +623,9 @@ window.app = {
     async loadAssets() {
         //this.showScreen('loading');
         const assets = this.assets || [];
-        const total = assets.length + 2;
+        const separatorIndex = assets.findIndex(x => x && x._separator);
+        const total = (separatorIndex >= 0 ? separatorIndex : assets.length) + 2;
         let loadedCount = 0;
-        for (const item of assets) {
-            PIXI.Assets.add({
-                alias: item.name,
-                src: item.path
-            });
-            await PIXI.Assets.load(item.name);
-            loadedCount++;
-            const percent = Math.floor((loadedCount / total) * 100);
-            this.updateLoadingProgress(percent);
-        }
 
         await this.apiStart();
         loadedCount++;
@@ -616,8 +635,28 @@ window.app = {
         loadedCount++;
         this.updateLoadingProgress(Math.floor((loadedCount / total) * 100));
 
+        for (const item of assets) {
+            if (item && item._separator) {
+                //this.startGame();
+                continue;
+            } else {
+                PIXI.Assets.add({
+                    alias: item.name,
+                    src: item.path
+                });
+                await PIXI.Assets.load(item.name);
+                if (separatorIndex < 0 || loadedCount < total) {
+                    loadedCount++;
+                    const percent = Math.floor((loadedCount / total) * 100);
+                    this.updateLoadingProgress(percent);
+                }
+            }
+        }
+
         // === Готово, прогресс 100% ===
         this.updateLoadingProgress(100);
+
+        console.log('All Loaded');
     },
 
     updateLoadingProgress(percent) {
@@ -630,6 +669,102 @@ window.app = {
         this.progressBar.beginFill(0xffffff);
         this.progressBar.drawRoundedRect(0, 0, w, h, h / 2);
         this.progressBar.endFill();
+    },
+
+    async buildPreloaderScreen() {
+        const screen = new PIXI.Container();
+        screen.removeChildren();
+        this.screens.preloader = screen;
+        this.gameRoot.addChild(screen);
+        screen.visible = false;
+        const cx = this.gameWidth/2;
+        const cy = this.gameHeight/2;
+
+        const bg = new PIXI.Graphics();
+        bg.roundRect(cx - 500, cy - 150, 1000, 300, 30)
+            .fill({ color: 0x000000, alpha: 0.9 })
+            .stroke({ width: 3, color: 0xffffff });
+        screen.addChild(bg);
+
+        const langCaption = new PIXI.Text({
+            text: this.getText("play_sounds"),
+            style: {
+                fill: "gold",
+                fontSize: 62,
+                fontWeight: "bold"
+            }
+        });
+        langCaption.x = cx - langCaption.width/2;
+        langCaption.y = cy - 100;
+        screen.addChild(langCaption);
+
+        const yesButton = new PIXI.Container();
+        screen.addChild(yesButton);
+        const ybBg = new PIXI.Graphics();
+        ybBg.roundRect(0, 0, 150, 80, 10)
+            .fill({ color: 0xffffff, alpha: 0.4 })
+            .stroke({ width: 3, color: 0xffffff });
+        yesButton.addChild(ybBg);
+        const ybCaption = new PIXI.Text({
+            text: this.getText("yes"),
+            style: {
+                fill: "white",
+                fontSize: 40,
+                fontWeight: "bold"
+            }
+        });
+        ybCaption.x = 75 - ybCaption.width/2;
+        ybCaption.y = 40 - ybCaption.height/2;
+        yesButton.addChild(ybCaption);
+        yesButton.x = cx - 200 - yesButton.width/2;
+        yesButton.y = cy + 10;
+        yesButton.interactive = true;
+        yesButton.cursor = 'pointer';
+        yesButton.on('pointertap', () => {
+            this.sound = true;
+            screen.visible = false;
+            this.screens.game.visible = true;
+            this.buttons.btnSound.wave.visible = true;
+            this.buttons.btnSound.cross.visible = false;
+            this.lsSet('data', 'sound', true);
+        });
+
+        const noButton = new PIXI.Container();
+        screen.addChild(noButton);
+        const nbBg = new PIXI.Graphics();
+        nbBg.roundRect(0, 0, 150, 80, 10)
+            .fill({ color: 0xffffff, alpha: 0.4 })
+            .stroke({ width: 3, color: 0xffffff });
+        noButton.addChild(nbBg);
+        const nbCaption = new PIXI.Text({
+            text: this.getText("no"),
+            style: {
+                fill: "white",
+                fontSize: 40,
+                fontWeight: "bold"
+            }
+        });
+        nbCaption.x = 75 - nbCaption.width/2;
+        nbCaption.y = 40 - nbCaption.height/2;
+        noButton.addChild(nbCaption);
+        noButton.x = cx + 200 - noButton.width/2;
+        noButton.y = cy + 10;
+        noButton.interactive = true;
+        noButton.cursor = 'pointer';
+        noButton.on('pointertap', () => {
+            this.sound = false;
+            screen.visible = false;
+            this.screens.game.visible = true;
+            this.buttons.btnSound.wave.visible = false;
+            this.buttons.btnSound.cross.visible = true;
+            this.lsSet('data', 'sound', false);
+        });
+
+
+
+
+
+
     },
 
     async buildBetsModal() {
@@ -655,6 +790,7 @@ window.app = {
 
         betsWindowContainer.addChild(betsWindowBg);
         screen.addChild(betsWindowContainer);
+        screen.betsContainer = betsWindowContainer;
 
         const padding = 15;
         const btnWidth = 245;
@@ -856,6 +992,7 @@ window.app = {
 
         windowContainer.addChild(bg);
         screen.addChild(windowContainer);
+        screen.windowContainer = windowContainer;
 
         // ------------------------------------------------------------
         // Контейнеры
@@ -1218,8 +1355,6 @@ window.app = {
         this.gameRoot.addChild(screen);
         screen.visible = false;
 
-
-
         // Поведение экрана
         screen.eventMode = "static";
         let __drag = false;
@@ -1296,14 +1431,56 @@ window.app = {
         screen.y = 10;
 
         const bg = new PIXI.Graphics();
-        bg.roundRect(0, 0, this.gameWidth-20, this.gameHeight-20, 20)
-            .fill({ color: 0x000000, alpha: 0.9 })
-            .stroke({ width: 4, color: 0xffffff });
         screen.addChild(bg);
 
-// title
+        // Paytable
+        const scatterCont = this.getPaytableCont(this.paytable[7], 50, 50, 'imgSymbolScatter');
+        screen.addChild(scatterCont);
+
+        const wildCont = this.getPaytableCont(this.paytable[6], 650, 50, 'imgSymbolGnome');
+        screen.addChild(wildCont);
+
+        const cartCont = this.getPaytableCont(this.paytable[5], 50, 350, 'imgSymbolCart');
+        screen.addChild(cartCont);
+
+        const goldCont = this.getPaytableCont(this.paytable[4], 650, 350, 'imgSymbolGold');
+        screen.addChild(goldCont);
+
+        const tntCont = this.getPaytableCont(this.paytable[3], 50, 650, 'imgSymbolTnt');
+        screen.addChild(tntCont);
+
+        const helmCont = this.getPaytableCont(this.paytable[2], 650, 650, 'imgSymbolHelmet');
+        screen.addChild(helmCont);
+
+        const pickCont = this.getPaytableCont(this.paytable[1], 50, 950, 'imgSymbolPick');
+        screen.addChild(pickCont);
+
+        const bootsCont = this.getPaytableCont(this.paytable[0], 650, 950, 'imgSymbolBoots');
+        screen.addChild(bootsCont);
+
+
+        const lineRulesText = new PIXI.Text({
+            text: this.getText("lines_rules"),
+            style: {
+                fill: "#ffffff",
+                fontSize: 45,
+                fontWeight: "bold",
+
+                wordWrap: true,
+                wordWrapWidth: 1100,
+                breakWords: false,
+                align: "justify"
+            }
+        });
+        lineRulesText.x = 70;
+        lineRulesText.y = 1250;
+        screen.addChild(lineRulesText);
+        this.texts.helpLineRules = lineRulesText;
+
+        // title
+        let paytableY = 970 + lineRulesText.height;
         const title = new PIXI.Text({
-            text: "Lines",
+            text: this.getText("lines2"),
             style: {
                 fill: 0xffffff,
                 fontSize: 72,
@@ -1312,8 +1489,9 @@ window.app = {
         });
         title.anchor.set(0.5, 0);
         title.x = (this.gameWidth - 20) / 2;
-        title.y = 20;
+        title.y = paytableY + 300;
         screen.addChild(title);
+        this.texts.helpLinesTitle = title;
 
 // Генерация линий
         let lineX = 50;
@@ -1374,6 +1552,163 @@ window.app = {
             row.push(it);
         }
         flushRow();
+
+        bg.roundRect(0, 0, this.gameWidth-20, y+200, 20)
+            .fill({ color: 0x000000, alpha: 0.9 })
+            .stroke({ width: 4, color: 0xffffff });
+
+    },
+
+    async buildPaytableModal() {
+        // Конейнер
+        const screen = new PIXI.Container();
+        screen.removeChildren();
+        this.modals.paytable = screen;
+        this.gameRoot.addChild(screen);
+        screen.visible = false;
+
+        // Поведение
+        screen.eventMode = "static";
+        screen.on("pointertap", (e) => {
+            screen.visible = false;
+            e.stopPropagation();
+        });
+
+        // Контент
+        const bg = new PIXI.Graphics();
+        screen.addChild(bg);
+        screen.bg = bg;
+        //bg.roundRect(0, 0, this.gameWidth, this.gameHeight, 0)
+        //    .fill({ color: 0x000000, alpha: 0.9 });
+            //.stroke({ width: 4, color: 0xffffff });
+
+        // Контейнер над барабанами
+        const paytableContainer = new PIXI.Container();
+        screen.paytableContainer = paytableContainer;
+        paytableContainer.x = 0;
+        paytableContainer.y = 500;
+        screen.addChild(paytableContainer);
+    },
+
+    showContextPaytable(symId, col, row) {
+        const ptCont = this.modals.paytable.paytableContainer;
+        ptCont.removeChildren().forEach(c => c.destroy());
+
+        ptCont.addChild(this.createPaytableBlock(row, col, symId));
+
+
+
+        console.log(symId);
+        this.modals.paytable.visible = true;
+    },
+
+    createPaytableBlock(r, c, symId) {
+        const cont = new PIXI.Container();
+        const offset = 10;
+        const x = c * 246;
+        const y = r * 246;
+        cont.x = x;
+        cont.y = y;
+
+        // По умолчанию правый конт
+        let bgX = -offset -5 ;
+        let bgY = -offset - 5;
+        let imgX = 0;
+        let textX = 270;
+        let align = "left";
+
+        // Левый или правый конт
+        if (c > 2) {
+            bgX = -offset - 246;
+            imgX = 246;
+            textX = -226;
+            align = "right";
+        }
+
+        const ptbg = new PIXI.Graphics();
+        cont.addChild(ptbg);
+        ptbg.roundRect(bgX, bgY, 246 * 2 + offset * 2, 246 + offset * 2, 20)
+            .fill({ color: 0x000000, alpha: 0.9 });
+        //    .stroke({ width: 6, color: 0xffffff });
+
+
+        const data = this.paytable[symId];
+        let textY = 15;
+        const count = data.filter(v => v).length;
+        let paytableTextGap = 20;
+        if (count > 3) {
+            textY = 2;
+            paytableTextGap = 7;
+        }
+
+
+        // Картинка
+        const assetName = this.symbolImgMap[symId][0];
+        const img = new PIXI.Sprite(PIXI.Assets.get(assetName));
+        cont.addChild(img);
+        img.x = -5;
+        img.y = -5;
+
+        // Таблица
+        for (let key = data.length - 1; key >= 0; key--) {
+            if (data[key]) {
+                const text = new PIXI.Text({
+                    text: key + " → " + data[key],
+                    style: {
+                        fill: 0xffffff,
+                        fontSize: 50,
+                        fontWeight: "bold",
+                        align: align
+                    }
+                });
+                cont.addChild(text);
+                text.x = textX;
+                text.y = textY;
+                textY += text.height + paytableTextGap;
+            }
+        }
+
+        return cont;
+    },
+
+    getPaytableCont(data, x, y, assetName) {
+        const paytableTextX = 300;
+        let textY = 15;
+        const count = data.filter(v => v).length;
+        let paytableTextGap = 20;
+        if (count > 3) {
+            textY = 2;
+            paytableTextGap = 7;
+        }
+
+
+        const cont = new PIXI.Container();
+        cont.x = x;
+        cont.y = y;
+
+        // Картинка
+        const img = new PIXI.Sprite(PIXI.Assets.get(assetName));
+        cont.addChild(img);
+
+        // Таблица
+        for (let key = data.length - 1; key >= 0; key--) {
+            if (data[key]) {
+                const text = new PIXI.Text({
+                    text: key + " → " + data[key],
+                    style: {
+                        fill: 0xffffff,
+                        fontSize: 50,
+                        fontWeight: "bold"
+                    }
+                });
+                cont.addChild(text);
+                text.x = paytableTextX;
+                text.y = textY;
+                textY += text.height + paytableTextGap;
+            }
+        }
+
+        return cont;
     },
 
     drawLinesMatrix(screen, matrix, color, x = 0, y = 0, size = 20, gap, lineWidth) {
@@ -1480,8 +1815,8 @@ window.app = {
 
         // Блок джекпотов
         const jpContainer = new PIXI.Container();
-        jpContainer.x = cx-570;
-        jpContainer.y = cy - 740;
+        jpContainer.x = cx - 570;
+        jpContainer.y = cy - 540;
         screen.addChild(jpContainer);
         screen.jpContainer = jpContainer;
 
@@ -1653,6 +1988,17 @@ window.app = {
         this.data.balanceText = balanceText;
         betsPanel.addChild(balanceText);
 
+
+        const betLinesCont = new PIXI.Container();
+        betLinesCont.x = 410;
+        betLinesCont.y = 0;
+        betsPanel.addChild(betLinesCont);
+        betLinesCont.eventMode = "static";     // включает участие в событиях
+        betLinesCont.cursor = "pointer";       // меняет курсор на руку
+        betLinesCont.on("pointertap", () => {
+            this.toggleModal(this.modals.bets);
+        });
+
         const betCaption = new PIXI.Text({
             text: this.getText("bet"),
             style: {
@@ -1662,15 +2008,10 @@ window.app = {
             }
         });
         betCaption.anchor.set(0.5);
-        betCaption.x = 500;
+        betCaption.x = 100;
         betCaption.y = 50;
         this.texts.betsTitle = betCaption;
-        betsPanel.addChild(betCaption);
-        betCaption.eventMode = "static";     // включает участие в событиях
-        betCaption.cursor = "pointer";       // меняет курсор на руку
-        betCaption.on("click", () => {
-            this.toggleModal(this.modals.bets);
-        });
+        betLinesCont.addChild(betCaption);
 
         const linesCaption = new PIXI.Text({
             text: this.getText("lines"),
@@ -1681,16 +2022,10 @@ window.app = {
             }
         });
         linesCaption.anchor.set(0.5);
-        linesCaption.x = 680;
+        linesCaption.x = 280;
         linesCaption.y = 50;
         this.texts.linesTitle = linesCaption;
-        betsPanel.addChild(linesCaption);
-        linesCaption.eventMode = "static";     // включает участие в событиях
-        linesCaption.cursor = "pointer";       // меняет курсор на руку
-        linesCaption.on("click", () => {
-            this.toggleModal(this.modals.bets);
-        });
-
+        betLinesCont.addChild(linesCaption);
 
         const betText = new PIXI.Text({
             text: this.game.bet,
@@ -1701,10 +2036,10 @@ window.app = {
             }
         });
         betText.anchor.set(0.5);
-        betText.x = 500;
-        betText.y = 130;
+        betText.x = 100;
+        betText.y = 140;
         this.data.betText = betText;
-        betsPanel.addChild(betText);
+        betLinesCont.addChild(betText);
 
         const linesText = new PIXI.Text({
             text: this.game.lines,
@@ -1715,17 +2050,22 @@ window.app = {
             }
         });
         linesText.anchor.set(0.5);
-        linesText.x = 680;
-        linesText.y = 130;
+        linesText.x = 280;
+        linesText.y = 140;
         this.data.linesText = linesText;
-        betsPanel.addChild(linesText);
+        betLinesCont.addChild(linesText);
 
         const lastWinCaption = new PIXI.Text({
             text: this.getText("last_win"),
             style: {
                 fill: "gold",
                 fontSize: 40,
-                fontWeight: "bold"
+                fontWeight: "bold",
+
+                wordWrap: true,
+                wordWrapWidth: 400,
+                breakWords: false,
+                align: "center"
             }
         });
         lastWinCaption.anchor.set(0.5);
@@ -1744,7 +2084,7 @@ window.app = {
         });
         winText.anchor.set(0.5);
         winText.x = 1000;
-        winText.y = 130;
+        winText.y = 140;
         betsPanel.addChild(winText);
         this.data.lastWinText = winText;
 
@@ -1759,10 +2099,10 @@ window.app = {
         const btnMenu = this.createMenuButton(0, 0);
         upperBtnContainer.addChild(btnMenu);
 
-        const btnSound = this.createSoundButton(150, 100);
+        const btnSound = this.createSoundButton(110, 100);
         upperBtnContainer.addChild(btnSound);
 
-        const btnHelp = this.createHelpButton(cx + this.gameWidth/2 - 450, 100);
+        const btnHelp = this.createHelpButton(cx + this.gameWidth/2 - 410, 100);
         upperBtnContainer.addChild(btnHelp);
 
         const btnClose = this.createCloseButton(cx + this.gameWidth/2 - 300, 0);
@@ -1773,13 +2113,13 @@ window.app = {
         screen.bottomBtnContainer = bottomBtnContainer;
         screen.addChild(bottomBtnContainer);
         bottomBtnContainer.x = cx - 300;
-        bottomBtnContainer.y = this.gameHeight - 450;
+        bottomBtnContainer.y = this.gameHeight - 350;
 
 
         const btnSpin = this.createSpinButton(300, 0);
         bottomBtnContainer.addChild(btnSpin);
 
-        const btnSpeed = this.createSpeedButton(232, 150, 1.4);
+        const btnSpeed = this.createSpeedButton(232, 122, 1.4);
         bottomBtnContainer.addChild(btnSpeed);
 
         const btnAuto = this.createAutoButton(0, 60);
@@ -1796,33 +2136,35 @@ window.app = {
         const cx = this.gameWidth/2;
         const cy = this.gameHeight/2;
 
+        // Верхние кнопки
+        screen.upperBtnContainer.y = 150;
+
+        // Блок джекпотов
+        screen.jpContainer.y = cy - 640;
+
+        // Блок барабанов
+        this.reelsContainer.y = cy - 450;
+        this.modals.wins.y = this.reelsContainer.y;
+        this.modals.paytable.paytableContainer.y = this.reelsContainer.y;
+
         // Лого
         const maxLogoY = Math.max(this.reelsContainer.y - screen.logo.height, 0);
         const defLogoY = 280;
         const logoY = Math.min(defLogoY, maxLogoY);
         screen.logo.y = logoY;
 
-        // Верхние кнопки
-        screen.upperBtnContainer.y = 150;
-
-        // Блок джекпотов
-        screen.jpContainer.y = cy - 740;
-
-        // Блок барабанов
-        this.reelsContainer.y = cy - 550;
-        this.modals.wins.y = this.reelsContainer.y;
-
         // Блок инфо
-        screen.goodPanel.y = cy + 215;
+        screen.goodPanel.y = cy + 300;
 
         // Блок ставок
-        screen.betPanel.y = this.gameHeight - 250;
+        screen.betPanel.y = this.gameHeight - 220;
 
         // Блок нижних кнопок
-        const bottomButtonsY = (this.gameHeight - 550- cy + 475) / 2;
+        const bottomButtonsY = (this.gameHeight - 320 - cy + 475) / 2;
         screen.bottomBtnContainer.y = cy + bottomButtonsY;
 
-
+        this.modals.auto.windowContainer.y = screen.bottomBtnContainer.y;
+        this.modals.bets.betsContainer.y = screen.bottomBtnContainer.y - this.modals.bets.betsContainer.height + 200;
 
         //console.log(this.gameHeight);
 
@@ -2036,7 +2378,7 @@ window.app = {
         });
 
         btn.on('pointertap', async () => {
-            await this.buildHelpModal();
+            //await this.buildHelpModal();
             this.modals.help.visible = true;
         });
 
@@ -2587,7 +2929,7 @@ window.app = {
         const cols = 5;
         const rows = 3;
 
-        const extra = 8;                  // 2 буферных сверху
+        const extra = 8;                  // 8 буферных сверху
         const symbolsPerReel = rows + extra;
 
         const cellW = 246;
@@ -2654,7 +2996,7 @@ window.app = {
                 const slot = reel.slots[i];
                 slot.removeChildren();
 
-                const sprite = this.createSymbolSprite(symId, cellW, cellH, 0, 'extra'+i);
+                const sprite = this.createSymbolSprite(symId, cellW, cellH, col, i, 'extra'+i);
                 slot.addChild(sprite);
             }
             // === 2. реальные символы ===
@@ -2662,7 +3004,7 @@ window.app = {
                 const index = row * 5 + col;
                 const symId = symbols[index];
 
-                this.game.symbols[row][col] = this.createSymbolSprite(symId, cellW, cellH, 0, 'row'+row);
+                this.game.symbols[row][col] = this.createSymbolSprite(symId, cellW, cellH, col, row, 'row'+row);
 
                 const slot = reel.slots[row + extra];
                 slot.removeChildren();
@@ -2711,7 +3053,7 @@ window.app = {
         reel.state = 0;
     },
 
-    createSymbolSprite(symId, w, h, y, dbg) {
+    createSymbolSprite(symId, w, h, col, row, dbg) {
         const assetNames = this.symbolMap[symId];
 
         let frames = [];
@@ -2740,7 +3082,7 @@ window.app = {
 
         const anim = new PIXI.AnimatedSprite(frames);
 
-        anim.y = y-5;
+        anim.y = -5;
         anim.x = -5;
 
 /*
@@ -2772,6 +3114,12 @@ window.app = {
                 };
             }
         };
+
+        anim.eventMode = "static";
+        anim.on("pointertap", (e) => {
+            this.showContextPaytable(symId, col, row);
+        });
+
         return anim;
     },
 
@@ -3228,8 +3576,9 @@ window.app = {
         this.data.balance = this.formatBalance(response.balance);
         this.game.comb = response.comb;
         this.game.extracomb = response.extracomb;
+        this.paytable = response.pay_table;
         console.log("Loaded restore()");
-        console.log(response.comb);
+        console.log(response.pay_table);
     },
 
     async apiSpin() {
@@ -3321,7 +3670,7 @@ window.app = {
 
         // НОВОЕ: отсекаем заведомо неправильные форматы (слишком "широкие")
         if ((ww / wh) > (this.gameWidth / this.minGameHeight)) {
-            gh = 2460;
+            gh = this.minGameHeight;
         }
 
         this.gameHeight = gh;
@@ -3342,7 +3691,17 @@ window.app = {
         if (full) {
             this.resizeBg();
             this.resizeGameScreen();
+
+            // Изменения размеров фона
+            this.modals.paytable.bg.clear();
+            this.modals.paytable.bg.roundRect(0, 0, this.gameWidth, this.gameHeight, 0)
+                .fill({ color: 0x000000, alpha: 0.5 });
+
         }
+
+        // Проверка на мобилку
+        this.isMobile = this.isMobileCheck();
+
     },
 
     drawSmoothLine(points, color = "gold", width = 10) {
@@ -3409,7 +3768,10 @@ window.app = {
         const ANIMATION_DURATION = 2500; // мс
         const PAUSE_BETWEEN_LINES = 30; // мс
 
-        const parent = this.game.linesCanvas;
+        const screen = this.game.linesCanvas;
+        const parent = new PIXI.Container();
+        screen.removeChildren();
+        screen.addChild(parent);
 
         let currentIndex = 0;
         const hasLines   = Array.isArray(winLines) && winLines.length > 0;
@@ -3640,8 +4002,21 @@ window.app = {
         });
     },
 
-    getText(code) {
-        return this.langs[this.lang][code];
+    getText(code, conds) {
+        return this.normalizeText(this.langs[this.lang][code], conds);
+    },
+
+    normalizeText(text, conds = {"tolower": true, "capitalize": true, "fixLn": true}) {
+        if (conds?.tolower) {
+            text = text.toLocaleLowerCase();
+        }
+        if (conds?.capitalize) {
+            text = text.charAt(0).toUpperCase() + text.slice(1);
+        }
+        if (conds?.fixLn) {
+            text = text.replace(/[\r\n]+/g, " ");
+        }
+        return text;
     },
 
     lsSet(group, key, value) {
@@ -3666,6 +4041,8 @@ window.app = {
         this.texts.linesTitle.text = this.getText("lines");
         this.texts.betsTitle.text = this.getText("bet");
         this.texts.lastWinTitle.text = this.getText("last_win");
+        this.texts.helpLinesTitle.text = this.getText("lines2");
+        this.texts.helpLineRules.text = this.getText("lines_rules");
     },
 
 
@@ -3837,9 +4214,44 @@ window.app = {
         // Например:
         // if (btn.iconOn) btn.iconOn.visible = on;
         // if (btn.iconOff) btn.iconOff.visible = !on;
+    },
+
+
+    soundInit() {
+        this.audioUnlocked = false;
+        this._soundUnlockHandler = () => this.soundUnlock();
+        window.addEventListener('pointerdown', this._soundUnlockHandler, true);
+        window.addEventListener('touchend',   this._soundUnlockHandler, true);
+        window.addEventListener('keydown',    this._soundUnlockHandler, true);
+    },
+
+    soundUnlock() {
+        if (this.audioUnlocked) return;
+        this.audioUnlocked = true;
+        window.removeEventListener('pointerdown', this._soundUnlockHandler, true);
+        window.removeEventListener('touchend',   this._soundUnlockHandler, true);
+        window.removeEventListener('keydown',    this._soundUnlockHandler, true);
+    },
+
+    playSound() {
+        const a = new Audio("assets/sound/mainSounds.mp3");
+        a.currentTime = 0;
+        a.play();
+        setTimeout(() => {
+            a.pause();
+        }, 0.250 * 1000);
+    },
+
+    isMobileCheck() {
+        const coarse = window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
+        const noHover = window.matchMedia && window.matchMedia("(hover: none)").matches;
+        const touchPoints = navigator.maxTouchPoints || 0;
+        const hasTouch = touchPoints > 0;
+        const ww = window.innerWidth;
+        const wh = window.innerHeight;
+        const smallViewport = Math.min(ww, wh) <= 900; // порог подбирай под свой UX
+        return (coarse && noHover) || (hasTouch && noHover && smallViewport);
     }
-
-
 };
 
 window.addEventListener("DOMContentLoaded", () => {
