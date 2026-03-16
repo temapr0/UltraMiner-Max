@@ -1,0 +1,25 @@
+{
+  "frames": {
+    "frame_0001": {"frame":{"x":0,"y":0,"w":1000,"h":667},"rotated":false,"trimmed":false,"spriteSourceSize":{"x":0,"y":0,"w":1000,"h":667},"sourceSize":{"w":1000,"h":667}},
+    "frame_0002": {"frame":{"x":1000,"y":0,"w":1000,"h":667},"rotated":false,"trimmed":false,"spriteSourceSize":{"x":0,"y":0,"w":1000,"h":667},"sourceSize":{"w":1000,"h":667}},
+    "frame_0003": {"frame":{"x":0,"y":667,"w":1000,"h":667},"rotated":false,"trimmed":false,"spriteSourceSize":{"x":0,"y":0,"w":1000,"h":667},"sourceSize":{"w":1000,"h":667}},
+    "frame_0004": {"frame":{"x":1000,"y":667,"w":1000,"h":667},"rotated":false,"trimmed":false,"spriteSourceSize":{"x":0,"y":0,"w":1000,"h":667},"sourceSize":{"w":1000,"h":667}},
+    "frame_0005": {"frame":{"x":0,"y":1334,"w":1000,"h":667},"rotated":false,"trimmed":false,"spriteSourceSize":{"x":0,"y":0,"w":1000,"h":667},"sourceSize":{"w":1000,"h":667}},
+    "frame_0006": {"frame":{"x":1000,"y":1334,"w":1000,"h":667},"rotated":false,"trimmed":false,"spriteSourceSize":{"x":0,"y":0,"w":1000,"h":667},"sourceSize":{"w":1000,"h":667}}
+  },
+
+  "animations": {
+    "main": [
+      "frame_0001","frame_0002","frame_0003","frame_0004","frame_0005","frame_0006"
+    ]
+  },
+
+  "meta": {
+    "app": "manual",
+    "version": "1.0",
+    "image": "jpBoard1.png",
+    "format": "RGBA8888",
+    "size": {"w":2000,"h":2001},
+    "scale": "1"
+  }
+}

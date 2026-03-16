@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 50 50"
+   version="1.1"
+   id="svg1"
+   sodipodi:docname="trophy.svg"
+   width="50"
+   height="50"
+   inkscape:version="1.4.2 (f4327f4, 2025-05-13)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs1" />
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="true"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="12.09375"
+     inkscape:cx="36.671835"
+     inkscape:cy="25.4677"
+     inkscape:window-width="1920"
+     inkscape:window-height="976"
+     inkscape:window-x="1016"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg1" />
+  <g
+     fill="#ffffff"
+     id="g1"
+     transform="matrix(0.48442012,0,0,0.48442012,-5.8999847,-10.321326)">
+    <path
+       d="m 42,22 h 44 v 10 c 0,12 7,22 18,25 v 8 c 0,13 -10,24 -23,25 -3,8 -8,14 -13,17 v 7 h 18 v 10 H 42 v -10 h 18 v -7 C 55,104 50,98 47,90 34,89 24,78 24,65 V 57 C 35,54 42,44 42,32 Z M 24,57 v 8 c 0,7 5,12 12,14 -1,-4 -2,-8 -2,-12 v -9 c -3,0 -6,-1 -10,-1 z m 80,0 c -4,0 -7,1 -10,1 v 9 c 0,4 -1,8 -2,12 7,-2 12,-7 12,-14 z"
+       id="path1" />
+  </g>
+</svg>

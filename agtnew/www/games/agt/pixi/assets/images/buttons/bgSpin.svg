@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="170.98 125.93 250 250"
+   version="1.1"
+   id="svg1"
+   sodipodi:docname="bgSpin.svg"
+   width="250"
+   height="250"
+   inkscape:version="1.4.2 (f4327f4, 2025-05-13)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="1.2108421"
+     inkscape:cx="192.42806"
+     inkscape:cy="262.62713"
+     inkscape:window-width="1920"
+     inkscape:window-height="976"
+     inkscape:window-x="1016"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg1" />
+  <defs
+     id="defs1">
+    <style
+       id="style1">
+            .cls-2{fill:#fff;}
+        </style>
+  </defs>
+  <g
+     id="g2"
+     transform="matrix(1.1023204,0,0,1.1023204,-17.494733,-12.05933)">
+    <g
+       id="g1">
+      <circle
+         cx="283.98001"
+         cy="238.92999"
+         r="113"
+         id="circle1" />
+      <path
+         class="cls-2"
+         d="m 283.98,344.34 c -58.12,0 -105.41,-47.29 -105.41,-105.41 0,-58.12 47.29,-105.41 105.41,-105.41 58.12,0 105.41,47.29 105.41,105.41 0,58.12 -47.29,105.41 -105.41,105.41 z m 0,-205.76 c -55.33,0 -100.35,45.02 -100.35,100.35 0,55.33 45.02,100.35 100.35,100.35 55.33,0 100.35,-45.02 100.35,-100.35 0,-55.33 -45.02,-100.35 -100.35,-100.35 z"
+         id="path1" />
+    </g>
+  </g>
+</svg>

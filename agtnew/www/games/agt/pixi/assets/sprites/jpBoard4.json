@@ -1,0 +1,21 @@
+{
+  "frames": {
+    "frame_0019": {"frame":{"x":0,"y":0,"w":1000,"h":667},"rotated":false,"trimmed":false,"spriteSourceSize":{"x":0,"y":0,"w":1000,"h":667},"sourceSize":{"w":1000,"h":667}},
+    "frame_0020": {"frame":{"x":1000,"y":0,"w":1000,"h":667},"rotated":false,"trimmed":false,"spriteSourceSize":{"x":0,"y":0,"w":1000,"h":667},"sourceSize":{"w":1000,"h":667}}
+  },
+
+  "animations": {
+    "main": [
+      "frame_0019","frame_0020"
+    ]
+  },
+
+  "meta": {
+    "app": "manual",
+    "version": "1.0",
+    "image": "jpBoard4.png",
+    "format": "RGBA8888",
+    "size": {"w":2000,"h":2001},
+    "scale": "1"
+  }
+}

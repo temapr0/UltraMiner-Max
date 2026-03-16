@@ -1,0 +1,71 @@
+{
+    "mainSounds": {
+        "spinSound": { "start": 0, "end": 0.246 },
+        "stopReelSound": { "start": 1, "end": 0.216 },
+        "stopReelAllSound": { "start": 2, "end": 0.16 },
+        "moneyAnimationEndSound": { "start": 3.036, "end": 1.27 },
+        "collectSound": { "start": 5.036, "end": 1.29 },
+        "showDenominationsSound": { "start": 7.036, "end": 0.51 },
+        "hideDenominationsSound": { "start": 8.036, "end": 0.51 },
+        "gambleLostSound": { "start": 9.036, "end": 0.91 },
+        "gambleWonSound": { "start": 10.036, "end": 0.93 },
+        "gambleOpenSound": { "name": "", "start": 11.036, "end": 1.51 },
+        "gambleCardClickSound": { "start": 13.036, "end": 0.09 },
+        "startAutoplaySound": { "name": "", "start": 14.036, "end": 0.24 },
+        "stopAutoplaySound": { "start": 15.036, "end": 0.51 },
+        "changeDenominationSound": { "start": 16.036, "end": 0.81 },
+        "creditSound": { "start": 17.036, "end": 0.31 },
+        "currencySound": { "start": 18.036, "end": 1.03 },
+        "paytableSound": { "start": 20.036, "end": 0.4 },
+        "unmuteSound": { "start": 21.036, "end": 0.93 },
+        "lineChangeSound1": { "start": 23.036, "end": 0.54 },
+        "lineChangeSound2": { "start": 24.036, "end": 0.55 },
+        "fullLine1": { "start": 28.036, "end": 4.29 },
+        "fullLine2": { "start": 33.036, "end": 4.76 },
+        "fullLine3": { "start": 38.036, "end": 4.84 },
+        "fullLine4": { "start": 43.036, "end": 5.58 },
+        "coinsSound": { "start": 49.036, "end": 10 }
+    },
+    "lineChangeSounds": {
+        "lineChangeSound1": { "start": 0, "end": 0.831565 },
+        "lineChangeSound2": { "start": 1.081565, "end": 0.77322 },
+        "lineChangeSound3": { "start": 2.104785, "end": 0.715873 },
+        "lineChangeSound4": { "start": 3.070658, "end": 0.670929 },
+        "lineChangeSound5": { "start": 3.991587, "end": 1.404694 }
+    },
+    "shortSounds": {
+        "stopScatterSound1": { "start": 0, "end": 1.466667 },
+        "stopScatterSound2": { "start": 0, "end": 1.466667 },
+        "stopScatterSound3": { "start": 0, "end": 1.466667 },
+        "stopScatterSound4": { "start": 0, "end": 1.466667 },
+        "stopScatterSound5": { "start": 0, "end": 1.466667 }
+    },
+    "shortSounds2": {
+        "stopWildSound1": { "start": 0, "end": 1.221587 },
+        "stopWildSound2": { "start": 0, "end": 1.221587 },
+        "stopWildSound3": { "start": 0, "end": 1.221587 },
+        "stopWildSound4": { "start": 0, "end": 1.221587 },
+        "stopWildSound5": { "start": 0, "end": 1.221587 }
+    },
+    "gambleSounds": {
+        "cardloop": { "start": 0, "end": 2.815782 },
+        "win0": { "start": 3.065782, "end": 0.497052 },
+        "win1": { "start": 3.812834, "end": 0.966531 },
+        "win2": { "start": 5.029365, "end": 1.271293 },
+        "win3": { "start": 6.550658, "end": 1.247347 },
+        "win4": { "start": 8.048005, "end": 1.419319 },
+        "close": { "start": 9.717324, "end": 0.339592 }
+    },
+    "winSounds": {
+        "win0": { "start": 0, "end": 1.55 },
+        "win1": { "start": 6, "end": 1.35 },
+        "win2": { "start": 4, "end": 1.65 },
+        "win3": { "start": 8, "end": 1.7 },
+        "win4": { "start": 15, "end": 1.72 },
+        "win5": { "start": 2, "end": 1.35 },
+        "win6": { "start": 17, "end": 1.5 },
+        "win7": { "start": 10, "end": 4.1 },
+        "creditAnimationSound": { "start": 19, "end": 10 }
+    },
+    "singleSounds": {}
+}
