@@ -509,6 +509,10 @@ window.app = {
 
         console.log(this.apiUser, this.apiToken, this.apiHost);
 
+        this.getHistory((data)=>{
+            console.log(data);
+        });
+
         PIXI.extensions.add({
             extension: { type: PIXI.ExtensionType.LoadParser, name: 'mp3' },
             test: (url) => url.split('?')[0].toLowerCase().endsWith('.mp3'),
@@ -1380,7 +1384,7 @@ window.app = {
     },
 
     async buildMenuButtonsScreen() {
-        const HL_COLOR = '#777777';
+        const HL_COLOR = '#ffffff';
         const screen = new PIXI.Container();
         screen.removeChildren();
         this.screens.menu.buttons = screen;
@@ -1531,7 +1535,7 @@ window.app = {
     },
 
     async buildMenuSettingsScreen() {
-        const HL_COLOR = '#777777';
+        const HL_COLOR = '#ffffff';
         const screen = new PIXI.Container();
         screen.removeChildren();
         this.screens.menu.settings = screen;
@@ -5070,6 +5074,35 @@ window.app = {
     async apiJpFinish() {
         var response = await this.apiRequest("finishjp", {});
         console.log('JPCardFinish:', response);
+    },
+
+    getHistory(callback) {
+        let domain = location.host;
+
+        if (location.host.split('.').length > 2) {
+            domain = location.host.replace(/^[^.]+\./g, "");
+        }
+
+        const url =
+            'https://history.' + domain +
+            '/index.php?u=' + this.apiUser +
+            '&lang=' + this.lang +
+            '&game=' + this.gameNameApi;
+
+        console.log('History url', url);
+
+        fetch(url, {
+            method: 'GET',
+            mode: 'cors'
+        })
+            .then(response => response.text())
+            .then(data => {
+                console.log('History Data', data);
+                if (callback) callback(data);
+            })
+            .catch(err => {
+                console.error('getHistory error:', err);
+            });
     },
 
     dec2Bin(n, length = 5) {
