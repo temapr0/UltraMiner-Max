@@ -47,6 +47,7 @@ html, body {
     <script src="pixi/gsap.min.js"></script>
     <script src="pixi/src/agtunique.js?v=<?=time()?>"></script>
     <script src="pixi/src/main.js?v=<?=time()?>"></script>
+    <script src="js/mc/model.js?v=<?=time()?>"></script>
     <script>
         window.app.apiToken = "<?=empty(auth::$token)?"demo":auth::$token?>";
         window.app.apiUser = "<?=auth::$user_id?>";

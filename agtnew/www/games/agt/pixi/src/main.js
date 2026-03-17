@@ -103,7 +103,8 @@ window.app = {
 
         {"name": "imgWheel",            "path": "../pixi/assets/images/fortuneWheel.png"},
         {"name": "imgWheelTest",        "path": "../pixi/assets/images/wheel_test.png"},
-        {"name": "imgWheelTest2",       "path": "../pixi/assets/images/wheel_test2.png"}
+        {"name": "imgWheelTest2",       "path": "../pixi/assets/images/wheel_test2.png"},
+        {"name": "imgYouWonTransparent","path": "../pixi/assets/images/imgYouWonTransparent.png"}
 
     ],
     assetsMedia: [
@@ -121,7 +122,7 @@ window.app = {
 
         {"name": "imgWheelRotation",    "path": "../pixi/assets/images/wheelTest4.png"},
         {"name": "imgWheelHead",        "path": "../pixi/assets/images/wheelHead.png"},
-        {"name": "imgWheelArrow",       "path": "../pixi/assets/images/wheelArrow.png"},
+        {"name": "imgWheelArrow",       "path": "../pixi/assets/images/imgWheelArrow.svg"},
         {"name": "imgJpBoard1",         "path": "../pixi/assets/sprites/jpBoard1.json"},
         {"name": "imgJpBoard2",         "path": "../pixi/assets/sprites/jpBoard2.json"},
         {"name": "imgJpBoard3",         "path": "../pixi/assets/sprites/jpBoard3.json"},
@@ -401,6 +402,13 @@ window.app = {
         "spinning": false,
         "speed": 1
     },
+    jackpot: {
+        enable: false,
+        test: false,
+        closed: true,
+        level: null,
+        value: 0
+    },
     texts: {},
     lang: "ru",
     buttons: {},
@@ -485,6 +493,7 @@ window.app = {
     // старт всей игры
     async init() {
         // фиксированный логический размер игры
+        //this.model = new Model();
         this.pixi = new PIXI.Application();
         await this.pixi.init({
             backgroundAlpha: 0,
@@ -551,6 +560,8 @@ window.app = {
         await this.buildPaytableModal();            // Слой всплывающих окошек paytable на символах барабана
         await this.buildJackpotScreen();            // Слой игры джекпота
         await this.buildGameButtonsScreen();        // Слой кнопок, общих для игры и джекпота
+        this.screens.jpAnim2 = new PIXI.Container();
+        this.gameRoot.addChild(this.screens.jpAnim2);
         await this.buildBetsModal();                // Слой окна выбора линий и ставок
         await this.buildAutoModal();                // Слой окна выбора количества автоспинов
         await this.buildCoinsLayer();               // Слой полета монеток при начислении джекпота
@@ -3618,32 +3629,31 @@ window.app = {
 
         btn.on('pointertap', () => {
             if (!btn.disabled) btn.icon.alpha = ALPHA_CLICKED;
-            const closeurl = this.getQueryString('closeurl');
-            if(typeof closeurl=='string') {
-                try {
-                    if(window.noCloseGame) {
+            if (this.jackpot.enable) {
+                this.stopJackpotFlow();
+            } else {
+                const closeurl = this.getQueryString('closeurl');
+                if (typeof closeurl == 'string') {
+                    try {
+                        if (window.noCloseGame) {
+                            window.location = closeurl;
+                        } else {
+                            window.top.location = closeurl;
+                        }
+                    } catch (e) {
                         window.location = closeurl;
                     }
-                    else {
-                        window.top.location = closeurl;
-                    }
-                }
-                catch(e) {
-                    window.location = closeurl;
-                }
-            } else {
-                try {
-                    if(window.self !== window.top) {
-                        window.top.location.reload();
-                    }
-                    else {
+                } else {
+                    try {
+                        if (window.self !== window.top) {
+                            window.top.location.reload();
+                        } else {
+                            window.location = window.location.origin;
+                        }
+                    } catch (e) {
                         window.location = window.location.origin;
                     }
                 }
-                catch(e) {
-                    window.location = window.location.origin;
-                }
-
             }
         });
 
@@ -5034,7 +5044,9 @@ window.app = {
         console.log('Jackpot:', response.jpwin, "Win:", response.win);
         this.game.jp = response.jpwin;
         if (response.jpwin) {
-            this.game.jackpots = response.jackpots;
+            this.jackpot.enable = true;
+            this.jackpot.level = response.jpwinlevel;
+            this.jackpot.value = response.jpwinvalue;
         }
         if (response.jpwin == 1) console.log(response);
         this.data.balance = this.formatBalance(parseFloat(response.balance) + parseFloat(response.win) );
@@ -5054,20 +5066,6 @@ window.app = {
             this.stopSpin();
         }
     },
-
-/*
-    async apiJpCard() {
-        var response = await this.apiRequest("nextjpcard", {});
-        this.jpWinValue = response.winvalue;
-        this.jpNum = response.jpnum;
-        console.log('JPCard:', response);
-    },
-
-    async apiJpLast() {
-        var response = await this.apiRequest("lastjpcard", {});
-        console.log('JPCardLast:', response);
-    },
-*/
 
     async apiJpFinish() {
         var response = await this.apiRequest("finishjp", {});
@@ -5204,21 +5202,13 @@ window.app = {
         screen.wheel = wheel;
 
         const wheelArrowUp = new PIXI.Sprite(PIXI.Assets.get('imgWheelArrow'));
-        wheelArrowUp.scale = 0.7;
+        //wheelArrowUp.scale = 0.7;
         wheelArrowUp.anchor.set(0.5);
-        wheelArrowUp.rotation = Math.PI;
+        //wheelArrowUp.rotation = Math.PI;
         wheelArrowUp.x = cx;
         wheelArrowUp.y = cy - 340;
         screen.addChild(wheelArrowUp);
         screen.wheelArrowUp = wheelArrowUp;
-
-        const wheelArrow = new PIXI.Sprite(PIXI.Assets.get('imgWheelArrow'));
-        wheelArrow.scale = 1;
-        wheelArrow.anchor.set(0.5);
-        wheelArrow.x = cx;
-        wheelArrow.y = cy + 350;
-        screen.addChild(wheelArrow);
-        screen.wheelArrow = wheelArrow;
 
         const wheelHead = new PIXI.Sprite(PIXI.Assets.get('imgWheelHead'));
         wheelHead.scale = 0.37;
@@ -5243,75 +5233,164 @@ window.app = {
 
         // иконки
         const iconTriangle = new PIXI.Sprite(PIXI.Assets.get('img2BtnTriangle'));
-
         iconTriangle.anchor.set(0.5);
-
         iconTriangle.x = 8;
         iconTriangle.y = 0;
-
         iconTriangle.visible = true;
-
         btn.addChild(iconTriangle);
-
         btn.iconTriangle = iconTriangle;
+
+        const iconRect = new PIXI.Sprite(PIXI.Assets.get('img2BtnRect'));
+        iconRect.anchor.set(0.5);
+        iconRect.x = 0;
+        iconRect.y = 0;
+        iconRect.visible = false;
+        btn.addChild(iconRect);
+        btn.iconRect = iconRect;
+
+        btn.active = false;
+
+        const counter = new PIXI.Text({
+            text: "1:30",
+            style: {
+                fill: "#000000",
+                fontSize: 40,
+                fontWeight: "bold",
+            }
+        });
+        counter.anchor.set(0.5);
+        counter.x = 0;
+        counter.y = 0;
+        counter.visible = true;
+        btn.addChild(counter);
+        btn.counter = counter;
+
         btn.on('pointertap', (e) => {
-            this.runJackpotFlow(wheel);
             e.stopPropagation();
+            if (!btn.active) {
+                screen.timer.stop();
+                btn.counter.visible = false;
+                btn.ring.visible = false;
+                this.runJackpotFlow(wheel);
+            } else {
+                this.finishRotateToAngleNow();
+            }
+
+
+
         });
         screen.addChild(btn);
         screen.btn = btn;
-
+        this.bindButtonMicroAnim(btn);
 
         const coinCont = new PIXI.Container();
-
         screen.addChild(coinCont);
         screen.coinsCont = coinCont;
+    },
 
+    createCountdownRing(x, y, radius = 80, lineWidth = 8) {
 
+        const c = new PIXI.Container();
+        c.x = x;
+        c.y = y;
 
+        const g = new PIXI.Graphics();
+        c.addChild(g);
 
+        c.duration = 0;
+        c.endTime = 0;
+        c.running = false;
 
+        c.start = (seconds) => {
+            c.duration = seconds * 1000;
+            c.endTime = performance.now() + c.duration;
+            c.running = true;
+        };
 
+        c.stop = () => {
+            c.running = false;
+            g.clear();
+        };
 
+        c.update = () => {
+            if (!c.running) return;
 
+            const now = performance.now();
+            const left = c.endTime - now;
 
-
-
-
-
-
-/*
-
-        const spinButton = new PIXI.Container();
-        screen.addChild(spinButton);
-        const ybBg = new PIXI.Graphics();
-        ybBg.roundRect(0, 0, 350, 150, 10)
-            .fill({ color: "gold", alpha: 0.4 })
-            .stroke({ width: 3, color: "gold", alpha: 1 });
-        spinButton.addChild(ybBg);
-        const ybCaption = new PIXI.Text({
-            text: "SPIN",
-            style: {
-                fill: "gold",
-                fontSize: 70,
-                fontWeight: "bold"
+            if (left <= 0) {
+                c.running = false;
+                g.clear();
+                return;
             }
-        });
-        ybCaption.x = 175 - ybCaption.width/2;
-        ybCaption.y = 75 - ybCaption.height/2;
-        spinButton.addChild(ybCaption);
-        spinButton.x = cx - spinButton.width / 2;
-        spinButton.y = 1200;
-        spinButton.interactive = true;
-        spinButton.cursor = 'pointer';
-        spinButton.on('pointertap', (e) => {
-            this.runJackpotFlow(wheel);
-            e.stopPropagation();
-        });
 
-*/
+            const progress = left / c.duration;
 
+            const startAngle = -Math.PI / 2;
+            const endAngle = startAngle + Math.PI * 2 * progress;
 
+            g.clear();
+
+            // дуга
+            g.arc(0, 0, radius, startAngle, endAngle);
+            g.stroke({
+                width: lineWidth,
+                color: 0xffffff
+            });
+
+            // точка на конце
+            const dotR = lineWidth * 1.5;
+            const dotX = Math.cos(endAngle) * radius;
+            const dotY = Math.sin(endAngle) * radius;
+
+            g.circle(dotX, dotY, dotR);
+            g.fill(0xffffff);
+        };
+
+        return c;
+    },
+
+    startCountdown(textObj, seconds, onFinish) {
+        let left = seconds;
+        let timer = null;
+        let finished = false;
+
+        const updateText = () => {
+            const m = Math.floor(left / 60);
+            const s = left % 60;
+            textObj.text = `${m}:${s.toString().padStart(2, '0')}`;
+        };
+
+        const stop = () => {
+            if (timer) {
+                clearInterval(timer);
+                timer = null;
+            }
+        };
+
+        updateText();
+
+        timer = setInterval(() => {
+            left--;
+
+            if (left <= 0) {
+                stop();
+
+                if (!finished) {
+                    finished = true;
+                    textObj.text = "0:00";
+                    if (onFinish) onFinish();
+                }
+
+                return;
+            }
+
+            updateText();
+        }, 1000);
+
+        return {
+            stop
+        };
     },
 
     makeJpBoardAnimated() {
@@ -5431,15 +5510,6 @@ window.app = {
         };
     },
 
-    /**
-     * Монетки летят по дуге (взлет/спуск) из (x,y) в (x1,y1) и удаляются при приземлении.
-     * container передаётся отдельным аргументом (не в opts).
-     *
-     * Требует: this.getFlyCoin() -> PIXI.DisplayObject (Sprite/AnimatedSprite и т.п.)
-     *
-     * @param {PIXI.Container} container
-     * @param {Object} opts
-     */
     spawnFlyCoins(container, opts = {}) {
         const {
             x, y,
@@ -5624,7 +5694,10 @@ window.app = {
     },
 
     /*  -- Экраны и анимация джекпота --  */
-    beginJpAnimation() {
+    beginJpAnimation(test = false) {
+        if (!test) {
+            this.apiJpFinish();
+        }
         let timeoutId = null;
         const screen = this.screens.jpAnim;
 
@@ -5644,7 +5717,7 @@ window.app = {
                 timeoutId = null;
             }
 
-            this.beginJpGame(); // твоя следующая функция
+            this.beginJpGame(test); // твоя следующая функция
             screen.visible = false;
         });
 
@@ -5654,32 +5727,49 @@ window.app = {
 
     },
 
-    beginJpGame() {
+    beginJpGame(test = false) {
+        if (test) {
+            this.jackpot.enable = true;
+            this.jackpot.value = 100;
+            this.jackpot.level = Math.floor(Math.random() * 4);
+            this.jackpot.test = true;
+        }
+
+        const timer = this.startCountdown(this.screens.JackpotGame.btn.counter, 15, () => {
+            this.runJackpotFlow(this.screens.JackpotGame.wheel); // событие после таймера
+        });
+        this.screens.JackpotGame.btn.counter.visible = true;
+        this.screens.JackpotGame.timer = timer;
+
+        const ring = this.createCountdownRing(0, 0, 150, 8);
+        this.screens.JackpotGame.btn.addChild(ring);
+        this.screens.JackpotGame.btn.ring = ring;
+
+        ring.start(15);
+
+        this.pixi.ticker.add(() => {
+            ring.update();
+        });
+
+
         this.screens.jpAnim.visible = false;
         this.screens.JackpotGame.visible = true;
-        this.screens.JackpotGame.coinsCont
-        this.spawnFlyCoins(this.screens.coinsLayer, {'x':900, 'y':550, 'x1':200, 'y1':this.gameHeight-150});
+        //this.screens.JackpotGame.coinsCont
         console.log('Begin Wheel!');
     },
 
     async runJackpotFlow(sprite) {
         // 1) запускаем бесконечную крутилку
         this.startWheelSpin(sprite);
+        this.screens.JackpotGame.btn.iconTriangle.visible = false;
+        this.screens.JackpotGame.btn.iconRect.visible = true;
+        this.screens.JackpotGame.btn.counter.visible = false;
+        this.screens.JackpotGame.btn.active = true;
 
-        // 2) тут вместо реального API — заглушка, чтобы ПРОСТО ЗАРАБОТАЛО
-        // Заменишь на свои последовательные запросы потом.
         let jpnum = null;
 
-        while (!(this.jpWinValue > 0)) {
-            //await this.apiJpCard();   // внутри этого метода у тебя обновляются
-                                      // this.jpWinValue и this.jpNum
-            this.jpWinValue = 200;
-            this.jpNum = Math.floor(Math.random() * 4);
-
-        }
-
         // когда вышли из цикла — значит winValue > 0
-        jpnum = this.jpNum;
+        jpnum = this.jackpot.level;
 
 
         // 3) останавливаем бесконечную крутилку
@@ -5687,6 +5777,7 @@ window.app = {
 
         // 4) считаем угол и делаем плавную доводку
         const targetDeg = this.getWheelAngle(jpnum);
+        this.jackpot.angle = targetDeg;
         console.log("JpNum: ", jpnum, "DegToStop: ", targetDeg);
 
         this.rotateToAngle(sprite, targetDeg, 3, 5000, () => {
@@ -5695,12 +5786,82 @@ window.app = {
     },
 
     async beginJpWin2() {
-        this.jpWinValue = 0;
-        this.jpNum = null;
+        this.screens.JackpotGame.btn.iconTriangle.visible = true;
+        this.screens.JackpotGame.btn.iconRect.visible = false;
+        this.screens.JackpotGame.btn.active = false;
+        if (!this.jackpot.test) {
+            this.jackpot.enable = false;
+            this.jackpot.level = -1;
+            this.jackpot.value = 0;
+        }
+
+        // Формируем экран выигрыша
+        const screen = this.screens.jpAnim2;
+        screen.removeChildren();
+        screen.visible = true;
+        let timeoutId = null;
+
+        // Поведение
+        screen.eventMode = "static";
+
+        const ww = window.innerWidth;
+        const wh = window.innerHeight;
+
+        screen.x = 0;
+        screen.y = 0;
+
+        const cx = this.gameWidth / 2;
+        const cy = this.gameHeight / 2;
+
+        const scaleMult = wh/this.gameHeight;
+        const bgFrom = this.gameWidth/2 - (ww/scaleMult)/2;
+        const bgTo = ww/scaleMult;
+
+        const bg = new PIXI.Graphics();
+        bg.roundRect(bgFrom, 0, bgTo, this.gameHeight, 0)
+            .fill({ color: 0x000000, alpha: 0.5 });
+        screen.addChild(bg);
+
+        const banner = new PIXI.Sprite(PIXI.Assets.get('imgYouWonTransparent'));
+        //wheel.scale = 0.45;
+        banner.anchor.set(0.5);
+        banner.x = cx;
+        banner.y = cy - 250;
+        screen.addChild(banner);
+        screen.banner = banner;
+
+        const winValueContainer = new PIXI.Container();
+        screen.addChild(winValueContainer);
+
+
+        this.animateAmount(0, this.jackpot.value, 5000, (current) => {
+            this.updateNumberContainer(winValueContainer, current, 0.6);
+            winValueContainer.x = cx - winValueContainer.width/2;
+            winValueContainer.y = cy - winValueContainer.height/2 - 50;
+        });
+
+        this.animateAmount(0, this.jackpot.value, 5000, (current) => {
+            this.data.lastWinText.text = current;
+        });
+
+        const coords = {
+            0: {"x": 300, "y": 400},
+            1: {"x": 900, "y": 400},
+            2: {"x": 300, "y": 550},
+            3: {"x": 900, "y": 550}
+        };
+
+        const cores = coords[this.jackpot.level];
+
+        this.spawnFlyCoins(this.screens.coinsLayer, {'x':cores.x, 'y':cores.y, 'x1':1000, 'y1':this.gameHeight-150});
+
         //await this.apiJpLast();
         //await this.apiJpFinish();
         console.log('Wheel stopped');
         //this.screens.JackpotGame.visible = false;
+        setTimeout(() => {
+            this.stopJackpotFlow();
+        }, 5000)
 
 
     },
@@ -5709,8 +5870,8 @@ window.app = {
         const group = this.wheelAngles[jpnum];
         const sector = group[Math.floor(Math.random() * group.length)];
 
-        const min = sector[0];
-        const max = sector[1];
+        const min = sector[0] + 4;
+        const max = sector[1] - 4;
 
         //return min+12;
         return min + Math.random() * (max - min);
@@ -5739,6 +5900,11 @@ window.app = {
     },
 
     rotateToAngle(sprite, targetDeg, turns = 3, duration = 2500, onComplete = null) {
+        if (this._jackpotRotateTick) {
+            PIXI.Ticker.shared.remove(this._jackpotRotateTick);
+            this._jackpotRotateTick = null;
+        }
+
         const start = performance.now();
 
         const startRot  = sprite.rotation;
@@ -5760,11 +5926,61 @@ window.app = {
             if (t === 1) {
                 sprite.rotation = startRot + totalDelta;
                 ticker.remove(tick);
+                this._jackpotRotateTick = null;
+                this._jackpotRotateSprite = null;
+                this._jackpotRotateFinal = null;
+                this._jackpotRotateComplete = null;
                 if (onComplete) onComplete();
             }
         };
 
+        this._jackpotRotateTick = tick;
+        this._jackpotRotateSprite = sprite;
+        this._jackpotRotateFinal = startRot + totalDelta;
+        this._jackpotRotateComplete = onComplete;
+
         ticker.add(tick);
+    },
+
+    finishRotateToAngleNow() {
+        if (!this._jackpotRotateTick || !this._jackpotRotateSprite) {
+            return;
+        }
+
+        PIXI.Ticker.shared.remove(this._jackpotRotateTick);
+
+        this._jackpotRotateSprite.rotation = this._jackpotRotateFinal;
+
+        const onComplete = this._jackpotRotateComplete;
+
+        this._jackpotRotateTick = null;
+        this._jackpotRotateSprite = null;
+        this._jackpotRotateFinal = null;
+        this._jackpotRotateComplete = null;
+
+        if (onComplete) onComplete();
+    },
+
+    stopJackpotFlow() {
+        // Досрочная остановка анимации джекпота.
+        // Закрыть все экраны
+        this.screens.jpAnim.visible = false;
+        this.screens.JackpotGame.visible = false;
+        this.screens.jpAnim2.visible = false;
+        // Привести свойства в исходное состояние
+        if (!this.jackpot.test) {
+            this.jackpot.enable = false;
+            this.jackpot.level = null;
+            this.jackpot.value = 0;
+        }
+        // Начислить выигрыш
+        const from = parseFloat(this.data.balanceText.text);
+        this.animateAmount(from, from + this.jackpot.value, 5000, (current) => {
+            this.data.balanceText.text = current;
+        });
+
+
+        //
     },
     /*  -- Экраны и анимация джекпота --  */
 
@@ -6425,8 +6641,7 @@ window.app = {
         return output;
     },
 
-    decodeURI(value)
-    {
+    decodeURI(value) {
         return decodeURIComponent(value.replace(/\+/g, ' '));
     }
 
