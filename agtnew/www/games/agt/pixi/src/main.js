@@ -513,6 +513,8 @@ window.app = {
             console.log(data);
         });
 
+        this.apiPromo();
+
         PIXI.extensions.add({
             extension: { type: PIXI.ExtensionType.LoadParser, name: 'mp3' },
             test: (url) => url.split('?')[0].toLowerCase().endsWith('.mp3'),
@@ -1913,6 +1915,71 @@ window.app = {
         titleText.y = 20;
         screen.addChild(titleText);
 
+        if (!this.historyHtmlLayer) {
+            const layer = document.createElement('div');
+            layer.style.position = 'absolute';
+            layer.style.left = '0';
+            layer.style.top = '0';
+            layer.style.display = 'none';
+            layer.style.overflow = 'auto';
+            layer.style.pointerEvents = 'auto';
+            layer.style.zIndex = '1000';
+            layer.style.boxSizing = 'border-box';
+
+            this.historyHtmlLayer = layer;
+
+            const host = this.fullscreenRootEl || this.pixi.view.parentNode || document.body;
+            if (getComputedStyle(host).position === 'static') {
+                host.style.position = 'relative';
+            }
+            host.appendChild(layer);
+        }
+
+        this.updateHistoryHtmlLayerPosition();
+    },
+
+    updateHistoryHtmlLayerPosition() {
+        if (!this.historyHtmlLayer || !this.screens.menu.history) return;
+
+        const screen = this.screens.menu.history;
+        const host = this.fullscreenRootEl || this.pixi.view.parentNode || document.body;
+        const hostRect = host.getBoundingClientRect();
+        const canvasRect = this.pixi.view.getBoundingClientRect();
+
+        const scaleX = canvasRect.width / this.pixi.screen.width;
+        const scaleY = canvasRect.height / this.pixi.screen.height;
+
+        const left = (canvasRect.left - hostRect.left) + screen.x * scaleX;
+        const top = (canvasRect.top - hostRect.top) + screen.y * scaleY;
+        const width = (this.gameWidth - 20) * scaleX;
+        const height = (this.gameHeight - 450) * scaleY;
+
+        this.historyHtmlLayer.style.left = left + 'px';
+        this.historyHtmlLayer.style.top = top + 'px';
+        this.historyHtmlLayer.style.width = width + 'px';
+        this.historyHtmlLayer.style.height = height + 'px';
+
+        // внутренние отступы под ваш заголовок HISTORY
+        this.historyHtmlLayer.style.padding = (110 * scaleY) + 'px 20px 20px 20px';
+    },
+
+    showMenuHistoryHtml() {
+        if (!this.historyHtmlLayer) return;
+
+        this.updateHistoryHtmlLayerPosition();
+        this.historyHtmlLayer.style.display = 'block';
+        this.historyHtmlLayer.innerHTML = '<div style="color:#ffffff;padding:20px;">Loading...</div>';
+
+        this.getHistory((html) => {
+            this.historyHtmlLayer.innerHTML = html;
+            this.updateHistoryHtmlLayerPosition();
+        });
+    },
+
+    hideMenuHistoryHtml() {
+        if (!this.historyHtmlLayer) return;
+        this.historyHtmlLayer.style.display = 'none';
+        this.historyHtmlLayer.innerHTML = '';
     },
 
     async buildMenuLsScreen() {
@@ -4348,8 +4415,13 @@ window.app = {
         Object.keys(this.screens.menu).forEach((k) => {
             this.screens.menu[k].visible = false;
         });
+        this.hideMenuHistoryHtml();
         this.screens.menu.buttons.visible = true;
         this.screens.menu[screen].visible = true;
+
+        if (screen == 'history') {
+            this.showMenuHistoryHtml();
+        }
     },
 
     closeMenu() {
@@ -4676,10 +4748,16 @@ window.app = {
         this.buttons.btnSpin.spinned(false);
         this.buttons.btnSpin.enable();
         this.pixi.ticker.remove(this.game.spinTicker);
-        this.updateBalance(this.data.balance);
+        this.animateAmount(this.data.balanceText.text, this.data.balance, 2000, (sum) => {
+            this.updateBalance(sum);
+        });
+
         this.texts.goodluck.text = this.getText("default");
         if (this.game.win > 0) {
-            this.data.lastWinText.text = this.formatBalance(this.game.win);
+            this.animateAmount(this.data.lastWinText.text, this.game.win, 2000, (sum) => {
+                this.data.lastWinText.text = this.formatBalance(sum);
+            });
+
 
             // Проверяем scatter
             let scatter = [];
@@ -5071,6 +5149,11 @@ window.app = {
         }
     },
 
+    async apiPromo() {
+        var response = await this.apiRequest("promo", {});
+        console.log('apiPromo:', response);
+    },
+
     async apiJpFinish() {
         var response = await this.apiRequest("finishjp", {});
         console.log('JPCardFinish:', response);
@@ -5089,15 +5172,12 @@ window.app = {
             '&lang=' + this.lang +
             '&game=' + this.gameNameApi;
 
-        console.log('History url', url);
-
         fetch(url, {
             method: 'GET',
             mode: 'cors'
         })
             .then(response => response.text())
             .then(data => {
-                console.log('History Data', data);
                 if (callback) callback(data);
             })
             .catch(err => {
@@ -6075,6 +6155,7 @@ window.app = {
             this.modals.paytable.bg.roundRect(0, 0, this.gameWidth, this.gameHeight, 0)
                 .fill({ color: 0x000000, alpha: 0.5 });
 
+            this.updateHistoryHtmlLayerPosition();
         }
 
         // Проверка на мобилку
