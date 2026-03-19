@@ -549,6 +549,77 @@ class Model {
             }
         });
     }
+    openDSInfo() {
+        $.ajax({
+            url: window.location.pathname+'/info?l='+model.lang,
+            headers: {
+                token: model.getToken(),
+                tokenuser: LS15.syMtvvgLJj
+            },
+            success: function(data,t,s) {
+
+                function createIframeFromData(framedata) {
+                    var iframe = document.createElement("iframe");
+                    iframe.id="iframe-agt-dspopup";
+                    iframe.src="about:blank";
+                    iframe.style.width="1024px";
+                    iframe.style.height="800px";
+                    iframe.style.border="0";
+                    iframe.style.position="absolute";
+                    iframe.style.top="0";
+                    iframe.style.left="0";
+                    iframe.style.width="100%";
+                    iframe.style.height="100vh";
+                    iframe.style['z-index']="9999";
+
+                    iframe.margin="0";
+                    iframe.frameborder="0";
+
+                    document.body.appendChild(iframe);
+
+                    var doc = iframe.contentWindow.document; doc.open();
+
+                    doc.writeln(framedata);
+
+                    document.fonts.forEach(function(e) {
+                        if(e.family.indexOf('Montserrat')>=0) {
+                            doc.fonts.add(e);
+                        }
+                    });
+
+                    doc.close();
+
+                    (typeof eventDispatcher!=='undefined' && eventDispatcher.dispatch(G.OPENED_FS_INFO));
+                }
+
+
+                if((navigator.appVersion && navigator.appVersion.length && navigator.appVersion.indexOf('; wv)')>=0)) {
+                    //1win apk
+                    createIframeFromData(data);
+                    return;
+                }
+
+                try {
+
+                    var w = window.open("",'_blank','menubar=no,toolbar=no,resizable=yes,scrollbars=yes,height=800,width=1024');
+
+                    w.document.body.innerHTML = data;
+                    document.fonts.forEach(function(e) {
+                        if(e.family.indexOf('Montserrat')>=0) {
+                            w.document.fonts.add(e);
+                        }
+                    });
+
+                    (typeof eventDispatcher!=='undefined' && eventDispatcher.dispatch(G.OPENED_FS_INFO));
+                }
+                catch(e) {
+
+                    createIframeFromData(data);
+                    return;
+                }
+            }
+        });
+    }
     openLSInfo() {
         $.ajax({
             url: window.location.pathname+'/ls?l='+model.lang,
@@ -647,7 +718,7 @@ class Model {
 
                     doc.close();
 
-                    eventDispatcher.dispatch(G.OPENED_FS_INFO);
+                    (typeof eventDispatcher!=='undefined' && eventDispatcher.dispatch(G.OPENED_FS_INFO));
                 }
 
                 if(navigator.appVersion && navigator.appVersion.length && navigator.appVersion.indexOf('; wv)')>=0) {
@@ -671,7 +742,7 @@ class Model {
                         }
                     });
 
-                    eventDispatcher.dispatch(G.OPENED_FS_INFO);
+                    (typeof eventDispatcher!=='undefined' && eventDispatcher.dispatch(G.OPENED_FS_INFO));
                 }
                 catch(e) {
 
@@ -1316,6 +1387,9 @@ class Model {
 
         if(typeof this.amount == 'number') {
             send_params['amount']=""+this.amount.toFixed(model.mult);
+        }
+        else {
+            send_params['amount']=""+parseFloat(this.amount).toFixed(model.mult);
         }
 
         if(this.gametype=='videopoker') {

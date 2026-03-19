@@ -509,9 +509,15 @@ window.app = {
 
         console.log(this.apiUser, this.apiToken, this.apiHost);
 
-        this.getHistory((data)=>{
-            console.log(data);
-        });
+        //model.openHistory();
+
+        //model.openPromoInfo();
+
+        //model.openLSInfo();
+
+        //this.getHistory((data)=>{
+        //    console.log(data);
+        //});
 
         this.apiPromo();
 
@@ -585,7 +591,7 @@ window.app = {
         await this.buildMenuInfoScreen();           // Слой меню - Ds
 
 
-        await this.buildHelpModal();                // Слой окна информации
+        //await this.buildHelpModal();                // Слой окна информации
         await this.buildGradientMask();             // Градиентная маска по бокам
 
         const ws = new WebSocket("wss://artofak.xyz:2096/"+this.office_id);
@@ -598,7 +604,10 @@ window.app = {
         ws.onmessage = (event) => {
             //console.log(event.data);
             JSON.parse(event.data).data.forEach((v, i) => {
-                this.jpText[i].text = Number(v).toFixed(2);
+                //console.log('Jp Texts', i, this.jpText[i].text);
+                this.animateAmount(Number(this.jpText[i].text) || 0, v, 600, (sum) => {
+                    this.jpText[i].text = sum;
+                });
             });
         };
 
@@ -915,9 +924,9 @@ window.app = {
         mainCont.x = 50;
 
         const betsWindowBg = new PIXI.Graphics();
-        betsWindowBg.roundRect(0, 0, 1130, 1000, 20)
+        betsWindowBg.roundRect(0, 0, 1130, 1400, 20)
             .fill({ color: 0x000000, alpha: 0.9 })
-            .stroke({ width: 2, color: '#f7931e' });
+            .stroke({ width: 3, color: '#f7931e' });
 
         mainCont.addChild(betsWindowBg);
         screen.addChild(mainCont);
@@ -979,7 +988,7 @@ window.app = {
             };
 
 
-            btn.state = (type == 'lines' && text == this.game.lines) || (type != 'lines' && text == this.game.bet);
+            btn.state = (type == 'Lines' && text == this.game.lines) || (type != 'lines' && text == this.game.bet);
 
             btn.setState(btn.state);
 
@@ -1004,7 +1013,7 @@ window.app = {
 
         const lineKeys = Object.keys(this.data.bets);   // ["243", "244", ...]
         const linesButtons = {};
-        const betsButtons = {};
+        let betsButtons = {};
 
         let posX = 0;
         let posY = 0;
@@ -1015,7 +1024,7 @@ window.app = {
             }
             const btn = makeButton(
                 lineKey,
-                'lines',
+                'Lines',
                 posX*276,
                 posY*145,
                 linesContainer,
@@ -1036,16 +1045,29 @@ window.app = {
 
         const linesY = (posY+1)*145 + 40;
 
+/*
         const separator = new PIXI.Graphics();
         separator.moveTo(100, linesY)
             .lineTo(1030, linesY)
             .stroke({ width: 7, color: "#ffffff" });
+        mainCont.addChild(separator);
+*/
+        const separator = new PIXI.Graphics();
+
+        const width = 1030 - 100;
+        const height = 7;
+
+        separator.roundRect(100, linesY - height / 2, width, height, height / 2)
+            .fill({ color: 0xffffff });
+
         mainCont.addChild(separator);
 
 
         betsContainer.y = linesY + 40;
 
         const renderBets = (array) => {
+            betsButtons = {};
+            betsContainer.removeChildren();
             posX = 0;
             posY = 0;
             Object.values(array).forEach(elm => {
@@ -1074,7 +1096,7 @@ window.app = {
                 posX++;
             });
 
-            console.log(array);
+            //console.log(array);
         };
 
         renderBets(this.data.bets[this.game.lines]);
@@ -1421,13 +1443,13 @@ window.app = {
         menuIcon.y = 20;
         const miBg = new PIXI.Sprite(PIXI.Assets.get('imgBtnBg'));
         miBg.anchor.set(0.5);
-        miBg.alpha = 0.6;
+        miBg.alpha = 1;
         miBg.x = miBg.width/2;
         miBg.y = miBg.height/2;
         menuIcon.addChild(miBg);
         const miIcon = new PIXI.Sprite(PIXI.Assets.get('imgBtnBurger'));
         miIcon.anchor.set(0.5);
-        miIcon.alpha = 0.6;
+        miIcon.alpha = 1;
         miIcon.x = miIcon.width + 10;
         miIcon.y = miIcon.height + 8;
         menuIcon.addChild(miIcon);
@@ -1454,13 +1476,13 @@ window.app = {
         const menuClose = new PIXI.Container();
         const mcBg = new PIXI.Sprite(PIXI.Assets.get('imgBtnBg'));
         mcBg.anchor.set(0.5);
-        mcBg.alpha = 0.6;
+        mcBg.alpha = 1;
         mcBg.x = mcBg.width/2;
         mcBg.y = mcBg.height/2;
         menuClose.addChild(mcBg);
         const mcIcon = new PIXI.Sprite(PIXI.Assets.get('imgBtnCross'));
         mcIcon.anchor.set(0.5);
-        mcIcon.alpha = 0.6;
+        mcIcon.alpha = 1;
         mcIcon.x = mcIcon.width + 10;
         mcIcon.y = mcIcon.height + 8;
         menuClose.addChild(mcIcon);
@@ -1510,28 +1532,74 @@ window.app = {
             {"name":"history", "icon":"imgBtnMenuHistory2"},
             {"name":"ls", "icon":"imgBtnMenuLs2"},
             {"name":"ds", "icon":"imgBtnMenuDs2"},
-            {"name":"top", "icon":"imgBtnMenuTop2"},
             {"name":"friday", "icon":"imgBtnMenuFriday2"},
             {"name":"info", "icon":"imgBtnMenuInfo2"}
         ];
         const btns = {};
-        buttons.forEach((item, i) => {
-            const btn = createButton(
-                50 + i * 163,
-                220,
-                item.icon,
-                () => {
-                    this.toggleMenu(item.name);
-                }
-            );
-            btns['btn_' + item.name] = btn;
-            screen.addChild(btn);
-        });
+//        buttons.forEach((item, i) => {
+//        });
+
+        const btnSettings = createButton(
+            50 + 0 * 163,
+            220,
+            "imgBtnMenuSettings2",
+            () => {
+                this.toggleMenu("settings");
+            }
+        );
+        btns['btn_settings'] = btnSettings;
+        screen.addChild(btnSettings);
+
+        const btnHistory = createButton(
+            50 + 1 * 163,
+            220,
+            "imgBtnMenuHistory2",
+            () => {
+                model.openHistory();
+            }
+        );
+        btns['btn_history'] = btnHistory;
+        screen.addChild(btnHistory);
+
+        const btnLs = createButton(
+            50 + 2 * 163,
+            220,
+            "imgBtnMenuLs2",
+            () => {
+                model.openLSInfo();
+            }
+        );
+        btns['btn_ls'] = btnLs;
+        screen.addChild(btnLs);
+
+        const btnDs = createButton(
+            50 + 3 * 163,
+            220,
+            "imgBtnMenuDs2",
+            () => {
+                model.openDSInfo();
+            }
+        );
+        btns['btn_ds'] = btnDs;
+        screen.addChild(btnDs);
+
+        const btnInfo = createButton(
+            50 + 4 * 163,
+            220,
+            "imgBtnMenuInfo2",
+            () => {
+                this.toggleMenu("info");
+            }
+        );
+        btns['btn_info'] = btnInfo;
+        screen.addChild(btnInfo);
+
+
 
         // Разделитель2
         const separator2 = new PIXI.Graphics();
-        separator2.moveTo(130, 400)
-            .lineTo(this.gameWidth - 130, 400)
+        separator2.moveTo(130, 397)
+            .lineTo(this.gameWidth - 130, 397)
             .stroke({ width: 6, color: HL_COLOR });
         screen.addChild(separator2);
     },
@@ -1663,101 +1731,6 @@ window.app = {
         btnMenuVibration.setState(this.isVibration);
 
 
-
-        // Языки
-/*
-        const padding = 40;
-        const rowHeight = 120;
-
-        const rightColX = 50;
-
-        let rowY = 400 + padding;
-
-
-        let x = rightColX;
-        let y = rowY + rowHeight * 2 + 10;
-
-        const gap = 20;
-        const btnSize = 100;
-        const maxX = this.gameWidth - padding - btnSize;
-
-        let activeLangFrame = null;
-
-        for (const langCode in this.langs) {
-
-            const assetName =
-                "imgLang" + langCode.charAt(0).toUpperCase() + langCode.slice(1) + '2';
-
-            const texture = PIXI.Assets.get(assetName);
-            if (!texture) continue;
-
-            if (x > maxX) {
-                x = rightColX;
-                y += btnSize + gap;
-            }
-
-            const btn = new PIXI.Container();
-            btn.x = x;
-            btn.y = y;
-
-            btn.eventMode = "static";
-            btn.cursor = "pointer";
-
-            const icon = new PIXI.Sprite(texture);
-            btn.addChild(icon);
-
-            if (langCode === this.lang) {
-                const frame = new PIXI.Graphics();
-                frame.roundRect(
-                    -6,
-                    -6,
-                    btnSize + 12,
-                    btnSize + 12,
-                    5
-                )
-                    .stroke({ width: 4, color: 0xffffff });
-                btn.addChild(frame);
-                activeLangFrame = frame;
-            }
-
-            btn.on("pointerdown", (e) => {
-
-                if (this.lang !== langCode) {
-
-                    // убрать старую рамку
-                    if (activeLangFrame) {
-                        activeLangFrame.destroy();
-                        activeLangFrame = null;
-                    }
-
-                    // новая рамка
-                    const frame = new PIXI.Graphics();
-                    frame.roundRect(
-                        -6,
-                        -6,
-                        btnSize + 12,
-                        btnSize + 12,
-                        5
-                    )
-                        .stroke({ width: 4, color: 0xffffff });
-
-                    btn.addChild(frame);
-                    activeLangFrame = frame;
-
-                    this.lang = langCode;
-                }
-
-                this.reloadLang();
-                this.lsSet('data', 'lang', langCode);
-                screen.visible = false;
-                e.stopPropagation();
-            });
-
-            screen.addChild(btn);
-
-            x += btnSize + gap;
-        }
-*/
 
         const buttons = [];
         const maxWidth = 1100;     // заданная ширина области
@@ -1934,53 +1907,7 @@ window.app = {
             }
             host.appendChild(layer);
         }
-
-        this.updateHistoryHtmlLayerPosition();
-    },
-
-    updateHistoryHtmlLayerPosition() {
-        if (!this.historyHtmlLayer || !this.screens.menu.history) return;
-
-        const screen = this.screens.menu.history;
-        const host = this.fullscreenRootEl || this.pixi.view.parentNode || document.body;
-        const hostRect = host.getBoundingClientRect();
-        const canvasRect = this.pixi.view.getBoundingClientRect();
-
-        const scaleX = canvasRect.width / this.pixi.screen.width;
-        const scaleY = canvasRect.height / this.pixi.screen.height;
-
-        const left = (canvasRect.left - hostRect.left) + screen.x * scaleX;
-        const top = (canvasRect.top - hostRect.top) + screen.y * scaleY;
-        const width = (this.gameWidth - 20) * scaleX;
-        const height = (this.gameHeight - 450) * scaleY;
-
-        this.historyHtmlLayer.style.left = left + 'px';
-        this.historyHtmlLayer.style.top = top + 'px';
-        this.historyHtmlLayer.style.width = width + 'px';
-        this.historyHtmlLayer.style.height = height + 'px';
-
-        // внутренние отступы под ваш заголовок HISTORY
-        this.historyHtmlLayer.style.padding = (110 * scaleY) + 'px 20px 20px 20px';
-    },
-
-    showMenuHistoryHtml() {
-        if (!this.historyHtmlLayer) return;
-
-        this.updateHistoryHtmlLayerPosition();
-        this.historyHtmlLayer.style.display = 'block';
-        this.historyHtmlLayer.innerHTML = '<div style="color:#ffffff;padding:20px;">Loading...</div>';
-
-        this.getHistory((html) => {
-            this.historyHtmlLayer.innerHTML = html;
-            this.updateHistoryHtmlLayerPosition();
-        });
-    },
-
-    hideMenuHistoryHtml() {
-        if (!this.historyHtmlLayer) return;
-        this.historyHtmlLayer.style.display = 'none';
-        this.historyHtmlLayer.innerHTML = '';
-    },
+},
 
     async buildMenuLsScreen() {
         const HL_COLOR = '#aaaaaa';
@@ -2168,12 +2095,13 @@ window.app = {
 
         const pointer = this.createMenuPointer();
         pointer.y = -30;
-        pointer.x = 1093; // Позиция кнопки.
+        pointer.x = 764; // Позиция кнопки.
+
+//        pointer.y = -30;
+//        pointer.x = 1093; // Позиция кнопки.
         screen.addChild(pointer);
 
         const bg = new PIXI.Graphics();
-        bg.roundRect(0, 0, this.gameWidth-20, this.gameHeight-450, 30)
-            .fill({ color: "#ffffff", alpha: 0.0 });
         screen.addChild(bg);
 
         // Заголовок: MENU
@@ -2190,6 +2118,231 @@ window.app = {
         titleText.y = 10;
         screen.addChild(titleText);
 
+
+
+
+
+
+        // Поведение экрана
+        screen.eventMode = "static";
+        let __drag = false;
+        let __dragMoved = false;
+        let __startGlobalY = 0;
+        let __startScreenY = 0;
+        const __topY = screen.y+10;
+        screen.on("pointerdown", (e) => {
+            e.stopPropagation();
+            __drag = true;
+            __dragMoved = false;
+            __startGlobalY = e.global.y;
+            __startScreenY = screen.y;
+        });
+        screen.on("pointermove", (e) => {
+            if (!__drag) return;
+            e.stopPropagation();
+            const dy = e.global.y - __startGlobalY;
+            if (!__dragMoved && Math.abs(dy) >= 6) __dragMoved = true;
+            if (__dragMoved) {
+                let ny = __startScreenY + dy;
+
+                const minY = __topY;
+                const maxY = Math.min(
+                    __topY,
+                    this.gameHeight - screen.height + __topY
+                );
+
+                if (ny > minY) ny = minY;
+                if (ny < maxY) ny = maxY;
+
+                screen.y = ny;
+            }
+        });
+        const __endDrag = (e) => {
+            if (!__drag) return;
+            e.stopPropagation();
+
+            const wasMoved = __dragMoved;
+
+            __drag = false;
+            __dragMoved = false;
+
+            if (!wasMoved) this.closeMenu();
+        };
+
+        screen.on("pointerup", __endDrag);
+        screen.on("pointerupoutside", __endDrag);
+
+        // wheel на контейнер через DOM (минимально)
+        if (!this.__helpWheelHandler) {
+            this.__helpWheelHandler = (ev) => {
+                if (!screen.visible) return;
+                ev.preventDefault();
+                let ny = screen.y - ev.deltaY;
+
+                const minY = __topY;
+                const maxY = Math.min(
+                    __topY,
+                    this.gameHeight - screen.height + __topY
+                );
+
+                if (ny > minY) ny = minY;
+                if (ny < maxY) ny = maxY;
+
+                screen.y = ny;
+            };
+            this.pixi.canvas.addEventListener("wheel", this.__helpWheelHandler, { passive: false });
+
+        }
+
+        // Содержимое экрана
+
+        // Paytable
+        const scatterCont = this.getPaytableCont(this.paytable[7], 50, 50, 'imgSymbolScatter');
+        screen.addChild(scatterCont);
+
+        const wildCont = this.getPaytableCont(this.paytable[6], 650, 50, 'imgSymbolGnome');
+        screen.addChild(wildCont);
+
+        const cartCont = this.getPaytableCont(this.paytable[5], 50, 350, 'imgSymbolCart');
+        screen.addChild(cartCont);
+
+        const goldCont = this.getPaytableCont(this.paytable[4], 650, 350, 'imgSymbolGold');
+        screen.addChild(goldCont);
+
+        const tntCont = this.getPaytableCont(this.paytable[3], 50, 650, 'imgSymbolTnt');
+        screen.addChild(tntCont);
+
+        const helmCont = this.getPaytableCont(this.paytable[2], 650, 650, 'imgSymbolHelmet');
+        screen.addChild(helmCont);
+
+        const pickCont = this.getPaytableCont(this.paytable[1], 50, 950, 'imgSymbolPick');
+        screen.addChild(pickCont);
+
+        const bootsCont = this.getPaytableCont(this.paytable[0], 650, 950, 'imgSymbolBoots');
+        screen.addChild(bootsCont);
+
+
+        const lineRulesText = new PIXI.Text({
+            text: this.getText("lines_rules"),
+            style: {
+                fill: "#ffffff",
+                fontSize: 45,
+                fontWeight: "bold",
+
+                wordWrap: true,
+                wordWrapWidth: 1100,
+                breakWords: false,
+                align: "justify"
+            }
+        });
+        lineRulesText.x = 70;
+        lineRulesText.y = 1250;
+        screen.addChild(lineRulesText);
+        this.texts.helpLineRules = lineRulesText;
+
+        // title
+        let paytableY = 970 + lineRulesText.height;
+        const title = new PIXI.Text({
+            text: this.getText("lines2"),
+            style: {
+                fill: 0xffffff,
+                fontSize: 72,
+                fontWeight: "bold"
+            }
+        });
+        title.anchor.set(0.5, 0);
+        title.x = (this.gameWidth - 20) / 2;
+        title.y = paytableY + 300;
+        screen.addChild(title);
+        this.texts.helpLinesTitle = title;
+
+// Генерация линий
+        let lineX = 50;
+        let lineY = title.y + title.height + 30;
+
+        const items = [];
+        this.data.lines.forEach((line, key) => {
+            const lineNum = key+1;
+
+            const c = new PIXI.Container();
+
+            const t = new PIXI.Text({
+                text: lineNum + ":",
+                style: {
+                    fill: 0xffffff,
+                    fontSize: 36,
+                    fontWeight: "bold"
+                }
+            });
+            c.addChild(t);
+
+            const mx = 80;
+            this.drawLinesMatrix(c, line, "#fbb03b", mx, 0, 30, 15, 4);
+
+            t.y = ((3 * 30 + 2 * 15) - t.height) / 2;
+
+            items.push(c);
+            screen.addChild(c);
+        });
+
+// layout (centered)
+        let row = [];
+        let rowW = 0;
+        let y = lineY;
+
+        const flushRow = () => {
+            if (!row.length) return;
+            let x = ((this.gameWidth - 20) - rowW) / 2;
+            for (const it of row) {
+                it.x = x;
+                it.y = y;
+                x += it.width + 60;
+            }
+            y += (3 * 30 + 2 * 15) + 40;
+            row = [];
+            rowW = 0;
+        };
+
+        for (const it of items) {
+            const w = it.width;
+            const nextW = row.length ? (rowW + 60 + w) : w;
+
+            if (nextW > (this.gameWidth - 20) && row.length) {
+                flushRow();
+            }
+
+            rowW = row.length ? (rowW + 60 + w) : w;
+            row.push(it);
+        }
+        flushRow();
+
+
+        bg.roundRect(0, 0, this.gameWidth-20, y+800, 30)
+            .fill({ color: 0x000000, alpha: 0.0 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     },
 
 
@@ -2198,7 +2351,7 @@ window.app = {
 
 
 
-    createMenuPointer(width = 60, height = 30, color = "#aaaaaa") {
+    createMenuPointer(width = 60, height = 30, color = "#ffffff") {
         const g = new PIXI.Graphics();
         const half = width / 2;
         g.moveTo(0, 0);
@@ -2212,7 +2365,7 @@ window.app = {
 
 
 
-    async buildHelpModal() {
+/*    async buildHelpModal() {
         const screen = new PIXI.Container();
         screen.removeChildren();
         this.modals.help = screen;
@@ -2262,7 +2415,7 @@ window.app = {
             __drag = false;
             __dragMoved = false;
 
-            if (!wasMoved) screen.visible = false;
+            if (!wasMoved) this.closeMenu();
         };
 
         screen.on("pointerup", __endDrag);
@@ -2378,7 +2531,7 @@ window.app = {
             c.addChild(t);
 
             const mx = 80;
-            this.drawLinesMatrix(c, line, this.lines_colors[lineNum][0], mx, 0, 30, 15, 4);
+            this.drawLinesMatrix(c, line, "#fbb03b", mx, 0, 30, 15, 4);
 
             t.y = ((3 * 30 + 2 * 15) - t.height) / 2;
 
@@ -2421,7 +2574,7 @@ window.app = {
             .fill({ color: 0x000000, alpha: 0.9 })
             .stroke({ width: 4, color: 0xffffff });
 
-    },
+    },*/
 
     async buildPaytableModal() {
         // Конейнер
@@ -2677,7 +2830,7 @@ window.app = {
                 const v = r[col] ? 1 : 0;
                 const sx = x + col * (size + gap);
                 const sy = y + row * (size + gap);
-                screen.addChild(this.drawSquare(sx, sy, size, v ? color : 0xffffff, v?true:false, lineWidth));
+                screen.addChild(this.drawSquare(sx, sy, size, v ? color : 0xffffff, true, lineWidth));
             }
         }
     },
@@ -4415,14 +4568,9 @@ window.app = {
         Object.keys(this.screens.menu).forEach((k) => {
             this.screens.menu[k].visible = false;
         });
-        this.hideMenuHistoryHtml();
         this.screens.menu.buttons.visible = true;
         this.screens.menu[screen].visible = true;
-
-        if (screen == 'history') {
-            this.showMenuHistoryHtml();
-        }
-    },
+        },
 
     closeMenu() {
         this.screens.modalFader.visible = false;
@@ -4644,7 +4792,11 @@ window.app = {
         this.pixi.ticker.add(this.game.spinTicker);
         this.endWinAnimation();
         this.game.linesCanvas.removeChildren();
-        this.data.balanceText.text = this.formatBalance(this.data.balance - this.game.bet);
+        this.animateAmount(parseFloat(this.data.balanceText.text), this.data.balance - this.game.bet, 400, (sum) => {
+            this.updateBalance(sum);
+        });
+
+
         this.stopRequested = false;
         this.fastStop = false;
         this.game.spinning = true;
@@ -4748,13 +4900,13 @@ window.app = {
         this.buttons.btnSpin.spinned(false);
         this.buttons.btnSpin.enable();
         this.pixi.ticker.remove(this.game.spinTicker);
-        this.animateAmount(this.data.balanceText.text, this.data.balance, 2000, (sum) => {
+        this.animateAmount(parseFloat(this.data.balanceText.text), this.data.balance, 2000, (sum) => {
             this.updateBalance(sum);
         });
 
         this.texts.goodluck.text = this.getText("default");
         if (this.game.win > 0) {
-            this.animateAmount(this.data.lastWinText.text, this.game.win, 2000, (sum) => {
+            this.animateAmount(parseFloat(this.data.lastWinText.text), this.game.win, 2000, (sum) => {
                 this.data.lastWinText.text = this.formatBalance(sum);
             });
 
@@ -5036,6 +5188,9 @@ window.app = {
     },
 
     animateAmount(from, to, duration = 5000, onUpdate = null) {
+        //console.log(from, to);
+        from = parseFloat(from);
+        to = parseFloat(to);
         const start = performance.now();
         const easeOut = t => 1 - Math.pow(1 - t, 3);
 
@@ -6154,8 +6309,6 @@ window.app = {
             this.modals.paytable.bg.clear();
             this.modals.paytable.bg.roundRect(0, 0, this.gameWidth, this.gameHeight, 0)
                 .fill({ color: 0x000000, alpha: 0.5 });
-
-            this.updateHistoryHtmlLayerPosition();
         }
 
         // Проверка на мобилку
@@ -6494,16 +6647,13 @@ window.app = {
     },
 
     lsSet(group, key, value) {
-        console.log();
         const path = `games.${this.gameName}.${group}.${key}`;
         localStorage.setItem(path, JSON.stringify(value));
-        console.log(path, JSON.stringify(value));
     },
 
     lsGet(group, key, def = null) {
         const path = `games.${this.gameName}.${group}.${key}`;
         const v = localStorage.getItem(path);
-        console.log(path, v);
         return v === null ? def : JSON.parse(v);
     },
 
