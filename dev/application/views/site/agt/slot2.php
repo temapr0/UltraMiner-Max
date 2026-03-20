@@ -198,7 +198,7 @@ html, body {
     <script src="pixi/ultraminerConf.js?v=<?=th::ver();?>"></script>
     <script src="pixi/src/main.js?v=<?=th::ver();?>"></script>
     <script src="js/mc/model.js?v=<?=th::ver();?>"></script>
-    <script src="pixi/src/scrollbox.js?v=<?=th::ver();?>"></script>
+    <!--<script src="pixi/src/scrollbox.js?v=<?php /*=th::ver();*/?>"></script>-->
 
     <script>
         const C = new Config('ultraminer');
