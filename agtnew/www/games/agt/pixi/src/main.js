@@ -50,6 +50,10 @@ window.app = {
         {"name": "imgBtnMenuSwitchOn",   "path": "../pixi/assets/images/buttonsNew/imgBtnSwitchOn.svg"},
         {"name": "imgBtnMenuSwitchOff",  "path": "../pixi/assets/images/buttonsNew/imgBtnSwitchOff.svg"},
 
+        {"name": "imgMenuSeparator",     "path": "../pixi/assets/images/imgMenuSeparator.svg"},
+        {"name": "imgInfoSeparator",     "path": "../pixi/assets/images/imgInfoSeparator.svg"},
+        {"name": "imgMenuLogo",          "path": "../pixi/assets/images/imgLogo.svg"},
+
         {"name": "imgJpField",          "path": "../pixi/assets/images/Jp/imgJpField.svg"},
         {"name": "imgJpFieldClubs",     "path": "../pixi/assets/images/Jp/imgJpFieldClubs.svg"},
         {"name": "imgJpFieldDiamonds",  "path": "../pixi/assets/images/Jp/imgJpFieldDiamonds.svg"},
@@ -1422,7 +1426,7 @@ window.app = {
         const bg = new PIXI.Graphics();
         bg.roundRect(10, 10, this.gameWidth-20, this.gameHeight-20, 30)
             .fill({ color: 0x000000, alpha: 0.85 })
-            .stroke({ width: 4, color: HL_COLOR });
+            .stroke({ width: 4, color: "#f7931e" });
         screen.addChild(bg);
 
         bg.eventMode = 'static';
@@ -1593,6 +1597,17 @@ window.app = {
         );
         btns['btn_info'] = btnInfo;
         screen.addChild(btnInfo);
+
+        const btnRating = createButton(
+            50 + 5 * 163,
+            220,
+            "imgBtnMenuTop2",
+            () => {
+                this.toggleMenu("top");
+            }
+        );
+        btns['btn_rating'] = btnRating;
+        screen.addChild(btnRating);
 
 
 
@@ -2033,6 +2048,24 @@ window.app = {
         titleText.y = 10;
         screen.addChild(titleText);
 
+        const box = this.createVScrollBox(this.pixi, 100, 100, 1000, 1500);
+        screen.addChild(box);
+
+        for (let i = 0; i < 30; i++) {
+            const t = new PIXI.Text({
+                text: 'Item ' + (i + 1) + "\n\n\n\n\n\n\n\n",
+                style: {
+                    fill: '#ffffff',
+                    fontSize: 74
+                }
+            });
+            t.x = 10;
+            t.y = i * 234;
+            box.content.addChild(t);
+        }
+
+        box.refreshScroll();
+
     },
 
     async buildMenuFridayScreen() {
@@ -2078,19 +2111,23 @@ window.app = {
     },
 
     async buildMenuInfoScreen() {
-        const HL_COLOR = '#aaaaaa';
+        const HL_COLOR = '#ffffff';
         const screen = new PIXI.Container();
         screen.removeChildren();
         this.screens.menu.info = screen;
         this.gameRoot.addChild(screen);
         screen.visible = false;
 
+        const cx = this.gameWidth/2;
+        const cy = this.gameHeight/2;
+        const boxCenterOffset = 30;
+
         screen.x = 10;
         screen.y = 400;
         screen.eventMode = "static";
 
         const pointer = this.createMenuPointer();
-        pointer.y = -30;
+        pointer.y = -32;
         pointer.x = 764; // Позиция кнопки.
         screen.addChild(pointer);
 
@@ -2104,65 +2141,127 @@ window.app = {
                 align: "center",
             }
         });
-        titleText.x = this.gameWidth / 2 - titleText.width / 2;
+        titleText.x = cx - titleText.width / 2 - boxCenterOffset;
         titleText.y = 10;
         screen.addChild(titleText);
 
-        // Область, в которой видно прокручиваемый контент
-        const viewY = 90;
-        const viewH = this.gameHeight - screen.y - viewY;
-        const viewW = this.gameWidth - 20;
 
-        // Контейнер со скроллируемым содержимым
-        const content = new PIXI.Container();
-        content.y = viewY;
-        screen.addChild(content);
+        const box = this.createVScrollBox(this.pixi, 10, 100, 1150, 1600);
+        screen.addChild(box);
 
-        // Фон контента
-        const bg = new PIXI.Graphics();
-        content.addChild(bg);
-
-        // Маска
-        const contentMask = new PIXI.Graphics();
-        contentMask.roundRect(0, viewY, viewW, viewH, 30)
-            .fill({ color: 0xffffff, alpha: 1 });
-        screen.addChild(contentMask);
-
-        content.mask = contentMask;
-
-        // Подложка/зона перехвата событий
-        const hitArea = new PIXI.Graphics();
-        hitArea.roundRect(0, viewY, viewW, viewH, 30)
-            .fill({ color: 0x000000, alpha: 0.001 });
-        hitArea.eventMode = "static";
-        screen.addChild(hitArea);
 
         // Содержимое экрана
         // Paytable
-        const scatterCont = this.getPaytableCont(this.paytable[7], 50, 50, 'imgSymbolScatter');
-        content.addChild(scatterCont);
 
-        const wildCont = this.getPaytableCont(this.paytable[6], 650, 50, 'imgSymbolGnome');
-        content.addChild(wildCont);
+        let curY = 50;
+        const logo = new PIXI.Sprite(PIXI.Assets.get("imgMenuLogo"));
+        box.content.addChild(logo);
+        logo.scale.set(1.5);
+        logo.x = cx - logo.width/2 - boxCenterOffset;
+        logo.y = curY;
 
-        const cartCont = this.getPaytableCont(this.paytable[5], 50, 350, 'imgSymbolCart');
-        content.addChild(cartCont);
+        curY = 290;
+        const separator1 = new PIXI.Sprite(PIXI.Assets.get("imgInfoSeparator"));
+        box.content.addChild(separator1);
+        separator1.x = 50;
+        separator1.y = curY;
 
-        const goldCont = this.getPaytableCont(this.paytable[4], 650, 350, 'imgSymbolGold');
-        content.addChild(goldCont);
+        curY += 40;
+        const introText = new PIXI.Text({
+            text: "INTRODUCTION",
+            style: {
+                fill: HL_COLOR,
+                fontSize: 45,
+                fontWeight: "bold",
+                align: "center",
+            }
+        });
+        introText.x = cx - introText.width / 2 - boxCenterOffset;
+        introText.y = curY;
+        box.content.addChild(introText);
 
-        const tntCont = this.getPaytableCont(this.paytable[3], 50, 650, 'imgSymbolTnt');
-        content.addChild(tntCont);
+        const desc = 'Ultra Miner video slot is a 3-reel game. The slot consists of 9 symbols. Reel Ways Pay are 27. Reel Ways Pay bet is 5. Win combinations may contain only one symbol in an enabled position from each consecutive reel. Win combinations are paid left to right on adjacent reels, on enabled positions, beginning with the leftmost reel.';
 
-        const helmCont = this.getPaytableCont(this.paytable[2], 650, 650, 'imgSymbolHelmet');
-        content.addChild(helmCont);
+        curY += 90;
+        const descText = new PIXI.Text({
+            text: desc,
+            style: {
+                fill: HL_COLOR,
+                fontSize: 45,
+                fontWeight: "bold",
+                align: "center",
 
-        const pickCont = this.getPaytableCont(this.paytable[1], 50, 950, 'imgSymbolPick');
-        content.addChild(pickCont);
+                wordWrap: true,
+                wordWrapWidth: 1050,
+                breakWords: false,
 
-        const bootsCont = this.getPaytableCont(this.paytable[0], 650, 950, 'imgSymbolBoots');
-        content.addChild(bootsCont);
+            }
+        });
+        descText.x = cx - descText.width / 2 - boxCenterOffset;
+        descText.y = curY;
+        box.content.addChild(descText);
 
+        curY += descText.height + 50;
+        const separator2 = new PIXI.Sprite(PIXI.Assets.get("imgInfoSeparator"));
+        box.content.addChild(separator2);
+        separator2.x = 50;
+        separator2.y = curY;
+
+        curY += 50;
+        const ptText = new PIXI.Text({
+            text: "PAY TABLE",
+            style: {
+                fill: HL_COLOR,
+                fontSize: 60,
+                fontWeight: "bold",
+                align: "center",
+            }
+        });
+        ptText.x = cx - ptText.width / 2 - boxCenterOffset;
+        ptText.y = curY;
+        box.content.addChild(ptText);
+
+
+
+
+        const col1 = cx/2 - 125;
+        const col2 = cx + cx/2 - 220;
+
+        curY += 80;
+        const scatterCont = this.getPaytableCont(this.paytable[7], col1, curY, 'imgSymbolScatter');
+        box.content.addChild(scatterCont);
+
+        const wildCont = this.getPaytableCont(this.paytable[6], col2, curY, 'imgSymbolGnome');
+        box.content.addChild(wildCont);
+
+        curY += 450;
+        const cartCont = this.getPaytableCont(this.paytable[5], col1, curY, 'imgSymbolCart');
+        box.content.addChild(cartCont);
+
+        const goldCont = this.getPaytableCont(this.paytable[4], col2, curY, 'imgSymbolGold');
+        box.content.addChild(goldCont);
+
+        curY += 450;
+        const tntCont = this.getPaytableCont(this.paytable[3], col1, curY, 'imgSymbolTnt');
+        box.content.addChild(tntCont);
+
+        const helmCont = this.getPaytableCont(this.paytable[2], col2, curY, 'imgSymbolHelmet');
+        box.content.addChild(helmCont);
+
+        curY += 450;
+        const pickCont = this.getPaytableCont(this.paytable[1], col1, curY, 'imgSymbolPick');
+        box.content.addChild(pickCont);
+
+        const bootsCont = this.getPaytableCont(this.paytable[0], col2, curY, 'imgSymbolBoots');
+        box.content.addChild(bootsCont);
+
+        curY += 450;
+        const separator3 = new PIXI.Sprite(PIXI.Assets.get("imgInfoSeparator"));
+        box.content.addChild(separator3);
+        separator3.x = 50;
+        separator3.y = curY;
+
+        curY += separator3.height + 30;
 
         const lineRulesText = new PIXI.Text({
             text: this.getText("lines_rules"),
@@ -2172,19 +2271,25 @@ window.app = {
                 fontWeight: "bold",
 
                 wordWrap: true,
-                wordWrapWidth: 1100,
+                wordWrapWidth: 1000,
                 breakWords: false,
                 align: "justify"
             }
         });
         lineRulesText.x = 70;
-        lineRulesText.y = 1250;
-        content.addChild(lineRulesText);
+        lineRulesText.y = curY;
+        box.content.addChild(lineRulesText);
         this.texts.helpLineRules = lineRulesText;
 
+        curY += lineRulesText.height + 50;
+        const separator4 = new PIXI.Sprite(PIXI.Assets.get("imgInfoSeparator"));
+        box.content.addChild(separator4);
+        separator4.x = 50;
+        separator4.y = curY;
+
         // title
-        let paytableY = 970 + lineRulesText.height;
-        const title = new PIXI.Text({
+        let paytableY = curY + separator4.height + 50;
+        const titleLines = new PIXI.Text({
             text: this.getText("lines2"),
             style: {
                 fill: 0xffffff,
@@ -2192,15 +2297,14 @@ window.app = {
                 fontWeight: "bold"
             }
         });
-        title.anchor.set(0.5, 0);
-        title.x = (this.gameWidth - 20) / 2;
-        title.y = paytableY + 300;
-        content.addChild(title);
-        this.texts.helpLinesTitle = title;
+        titleLines.x = cx - titleLines.width/2 - boxCenterOffset*2;
+        titleLines.y = paytableY;
+        box.content.addChild(titleLines);
+        this.texts.helpLinesTitle = titleLines;
 
 // Генерация линий
-        let lineX = 50;
-        let lineY = title.y + title.height + 30;
+        let lineX = 0;
+        let lineY = titleLines.y + titleLines.height + 30;
 
         const items = [];
         this.data.lines.forEach((line, key) => {
@@ -2209,22 +2313,23 @@ window.app = {
             const c = new PIXI.Container();
 
             const t = new PIXI.Text({
-                text: lineNum + ":",
+                text: lineNum,
                 style: {
                     fill: 0xffffff,
                     fontSize: 36,
-                    fontWeight: "bold"
+                    fontWeight: "bold",
+                    align: "right"
                 }
             });
             c.addChild(t);
 
-            const mx = 80;
+            const mx = 50;
             this.drawLinesMatrix(c, line, "#fbb03b", mx, 0, 30, 15, 4);
 
             t.y = ((3 * 30 + 2 * 15) - t.height) / 2;
 
             items.push(c);
-            content.addChild(c);
+            box.content.addChild(c);
         });
 
 // layout (centered)
@@ -2234,11 +2339,11 @@ window.app = {
 
         const flushRow = () => {
             if (!row.length) return;
-            let x = ((this.gameWidth - 20) - rowW) / 2;
+            let x = ((this.gameWidth - 120) - rowW) / 2;
             for (const it of row) {
                 it.x = x;
                 it.y = y;
-                x += it.width + 60;
+                x += it.width + 40;
             }
             y += (3 * 30 + 2 * 15) + 40;
             row = [];
@@ -2249,7 +2354,7 @@ window.app = {
             const w = it.width;
             const nextW = row.length ? (rowW + 60 + w) : w;
 
-            if (nextW > (this.gameWidth - 20) && row.length) {
+            if (nextW > (this.gameWidth - 60) && row.length) {
                 flushRow();
             }
 
@@ -2258,99 +2363,7 @@ window.app = {
         }
         flushRow();
 
-        bg.clear();
-        bg.roundRect(0, 0, viewW, y + 800, 30)
-            .fill({ color: 0x000000, alpha: 0.0 });
-
-        // после того как контент собран, считаем границы прокрутки
-        const getScrollLimits = () => {
-            const contentHeight = Math.max(content.height, y + 800);
-            const minY = viewY;
-            const maxY = Math.min(viewY, viewY + viewH - contentHeight);
-            return { minY, maxY };
-        };
-
-        // Поведение экрана
-        let __drag = false;
-        let __dragMoved = false;
-        let __startGlobalY = 0;
-        let __startContentY = 0;
-
-        hitArea.on("pointerdown", (e) => {
-            e.stopPropagation();
-            __drag = true;
-            __dragMoved = false;
-            __startGlobalY = e.global.y;
-            __startContentY = content.y;
-        });
-
-        hitArea.on("pointermove", (e) => {
-            if (!__drag) return;
-            e.stopPropagation();
-
-            const dy = e.global.y - __startGlobalY;
-            if (!__dragMoved && Math.abs(dy) >= 6) __dragMoved = true;
-            if (!__dragMoved) return;
-
-            let ny = __startContentY + dy;
-
-            const { minY, maxY } = getScrollLimits();
-
-            if (ny > minY) ny = minY;
-            if (ny < maxY) ny = maxY;
-
-            content.y = ny;
-        });
-
-        const __endDrag = (e) => {
-            if (!__drag) return;
-            e.stopPropagation();
-
-            const wasMoved = __dragMoved;
-
-            __drag = false;
-            __dragMoved = false;
-
-            if (!wasMoved) this.closeMenu();
-        };
-
-        hitArea.on("pointerup", __endDrag);
-        hitArea.on("pointerupoutside", __endDrag);
-        hitArea.on("pointercancel", __endDrag);
-
-        // wheel
-        if (!this.__infoWheelHandler) {
-            this.__infoWheelHandler = (ev) => {
-                if (!screen.visible) return;
-
-                const rect = this.pixi.canvas.getBoundingClientRect();
-                const localX = ev.clientX - rect.left;
-                const localY = ev.clientY - rect.top;
-
-                // колесо только когда курсор над областью экрана
-                if (
-                    localX < screen.x ||
-                    localX > screen.x + viewW ||
-                    localY < screen.y + viewY ||
-                    localY > screen.y + viewY + viewH
-                ) {
-                    return;
-                }
-
-                ev.preventDefault();
-
-                let ny = content.y - ev.deltaY;
-
-                const { minY, maxY } = getScrollLimits();
-
-                if (ny > minY) ny = minY;
-                if (ny < maxY) ny = maxY;
-
-                content.y = ny;
-            };
-
-            this.pixi.canvas.addEventListener("wheel", this.__infoWheelHandler, { passive: false });
-        }
+        box.refreshScroll();
 
     },
 
@@ -2386,219 +2399,405 @@ window.app = {
         return g;
     },
 
+    createVScrollBox(app, x, y, w, h) {
+        const canvas = app?.canvas || app?.view || app?.renderer?.canvas || app?.renderer?.view;
+        const root = new PIXI.Container();
+        root.x = x;
+        root.y = y;
 
+        const content = new PIXI.Container();
+        root.addChild(content);
 
+        const mask = new PIXI.Graphics();
+        mask.rect(0, 0, w, h).fill(0xffffff);
+        root.addChild(mask);
+        content.mask = mask;
 
-/*    async buildHelpModal() {
-        const screen = new PIXI.Container();
-        screen.removeChildren();
-        this.modals.help = screen;
-        this.gameRoot.addChild(screen);
-        screen.visible = false;
+        const hit = new PIXI.Graphics();
+        hit.rect(0, 0, w, h).fill({ color: 0xffffff, alpha: 0.001 });
+        hit.eventMode = 'static';
+        hit.cursor = 'grab';
+        root.addChild(hit);
 
-        // Поведение экрана
-        screen.eventMode = "static";
-        let __drag = false;
-        let __dragMoved = false;
-        let __startGlobalY = 0;
-        let __startScreenY = 0;
-        const __topY = screen.y+10;
-        screen.on("pointerdown", (e) => {
-            e.stopPropagation();
-            __drag = true;
-            __dragMoved = false;
-            __startGlobalY = e.global.y;
-            __startScreenY = screen.y;
-        });
-        screen.on("pointermove", (e) => {
-            if (!__drag) return;
-            e.stopPropagation();
-            const dy = e.global.y - __startGlobalY;
-            if (!__dragMoved && Math.abs(dy) >= 6) __dragMoved = true;
-            if (__dragMoved) {
-                let ny = __startScreenY + dy;
+        const track = new PIXI.Graphics();
+        root.addChild(track);
 
-                const minY = __topY;
-                const maxY = Math.min(
-                    __topY,
-                    this.gameHeight - screen.height + __topY
-                );
+        const thumb = new PIXI.Graphics();
+        thumb.eventMode = 'static';
+        thumb.cursor = 'pointer';
+        root.addChild(thumb);
 
-                if (ny > minY) ny = minY;
-                if (ny < maxY) ny = maxY;
+        root.content = content;
+        root.scrollY = 0;
+        root.maxScrollY = 0;
+        root.viewportW = w;
+        root.viewportH = h;
+        root._contentHeight = h;
 
-                screen.y = ny;
+        root.refreshScroll = () => {
+            let contentHeight = 0;
+
+            for (const child of content.children) {
+                const bottom = child.y + child.height;
+                if (bottom > contentHeight) contentHeight = bottom;
             }
-        });
-        const __endDrag = (e) => {
-            if (!__drag) return;
-            e.stopPropagation();
 
-            const wasMoved = __dragMoved;
+            if (contentHeight < h) contentHeight = h;
 
-            __drag = false;
-            __dragMoved = false;
+            root._contentHeight = contentHeight;
+            root.maxScrollY = Math.max(0, contentHeight - h);
 
-            if (!wasMoved) this.closeMenu();
+            if (root.scrollY < 0) root.scrollY = 0;
+            if (root.scrollY > root.maxScrollY) root.scrollY = root.maxScrollY;
+
+            content.y = -root.scrollY;
+
+            track.clear();
+            thumb.clear();
+
+            if (root.maxScrollY <= 0) {
+                return;
+            }
+
+            /*
+                        track.roundRect(w - 20, 0, 24, h+4, 6)
+                            .stroke({ color: '#ffffff', alpha: 0.7 });
+            */
+
+            track.roundRect(w - 16, 4, 16, h, 6)
+                .fill({ color: '#ffffff', alpha: 0.2 });
+
+            const thumbMinH = 40;
+            const thumbH = Math.max(thumbMinH, h * (h / contentHeight));
+            const maxThumbY = h - thumbH;
+            const thumbY = root.maxScrollY > 0
+                ? (root.scrollY / root.maxScrollY) * maxThumbY
+                : 0;
+
+            thumb.roundRect(w - 16, thumbY, 16, thumbH, 6)
+                .fill({ color: 0xffffff, alpha: 0.85 });
         };
 
-        screen.on("pointerup", __endDrag);
-        screen.on("pointerupoutside", __endDrag);
+        root.setScrollY = (v) => {
+            root.scrollY = v;
+            root.refreshScroll();
+        };
 
-        // wheel на контейнер через DOM (минимально)
-        if (!this.__helpWheelHandler) {
-            this.__helpWheelHandler = (ev) => {
-                if (!screen.visible) return;
-                ev.preventDefault();
-                let ny = screen.y - ev.deltaY;
+        root.scrollBy = (dy) => {
+            root.setScrollY(root.scrollY + dy);
+        };
 
-                const minY = __topY;
-                const maxY = Math.min(
-                    __topY,
-                    this.gameHeight - screen.height + __topY
-                );
+        let dragActive = false;
+        let dragStartY = 0;
+        let dragStartScrollY = 0;
 
-                if (ny > minY) ny = minY;
-                if (ny < maxY) ny = maxY;
+        hit.on('pointerdown', (e) => {
+            if (root.maxScrollY <= 0) return;
+            dragActive = true;
+            dragStartY = e.global.y;
+            dragStartScrollY = root.scrollY;
+            hit.cursor = 'grabbing';
+        });
 
-                screen.y = ny;
-            };
-            this.pixi.canvas.addEventListener("wheel", this.__helpWheelHandler, { passive: false });
+        hit.on('pointermove', (e) => {
+            if (!dragActive) return;
+            const dy = e.global.y - dragStartY;
+            root.setScrollY(dragStartScrollY - dy);
+        });
 
+        const stopDrag = () => {
+            dragActive = false;
+            hit.cursor = 'grab';
+        };
+
+        hit.on('pointerup', stopDrag);
+        hit.on('pointerupoutside', stopDrag);
+        hit.on('pointercancel', stopDrag);
+
+        let thumbDrag = false;
+        let thumbGrabOffset = 0;
+
+        thumb.on('pointerdown', (e) => {
+            if (root.maxScrollY <= 0) return;
+            thumbDrag = true;
+
+            const local = e.getLocalPosition(root);
+            const thumbMinH = 40;
+            const thumbH = Math.max(thumbMinH, h * (h / root._contentHeight));
+            const maxThumbY = h - thumbH;
+            const currentThumbY = root.maxScrollY > 0
+                ? (root.scrollY / root.maxScrollY) * maxThumbY
+                : 0;
+
+            thumbGrabOffset = local.y - currentThumbY;
+            e.stopPropagation();
+        });
+
+        thumb.on('pointermove', (e) => {
+            if (!thumbDrag) return;
+
+            const local = e.getLocalPosition(root);
+            const thumbMinH = 40;
+            const thumbH = Math.max(thumbMinH, h * (h / root._contentHeight));
+            const maxThumbY = h - thumbH;
+
+            let newThumbY = local.y - thumbGrabOffset;
+            if (newThumbY < 0) newThumbY = 0;
+            if (newThumbY > maxThumbY) newThumbY = maxThumbY;
+
+            const ratio = maxThumbY > 0 ? newThumbY / maxThumbY : 0;
+            root.setScrollY(root.maxScrollY * ratio);
+        });
+
+        const stopThumbDrag = () => {
+            thumbDrag = false;
+        };
+
+        thumb.on('pointerup', stopThumbDrag);
+        thumb.on('pointerupoutside', stopThumbDrag);
+        thumb.on('pointercancel', stopThumbDrag);
+
+        const onWheel = (e) => {
+            if (!canvas) return;
+            const rect = canvas.getBoundingClientRect();
+            const px = e.clientX - rect.left;
+            const py = e.clientY - rect.top;
+
+            const gx = root.x;
+            const gy = root.y;
+
+            if (px < gx || px > gx + w || py < gy || py > gy + h) return;
+            if (root.maxScrollY <= 0) return;
+
+            e.preventDefault();
+            root.scrollBy(e.deltaY);
+        };
+
+        if (canvas) {
+            canvas.addEventListener('wheel', onWheel, { passive: false });
         }
 
-        // Содержимое экрана
-        screen.x = 10;
-        screen.y = 10;
-
-        const bg = new PIXI.Graphics();
-        screen.addChild(bg);
-
-        // Paytable
-        const scatterCont = this.getPaytableCont(this.paytable[7], 50, 50, 'imgSymbolScatter');
-        screen.addChild(scatterCont);
-
-        const wildCont = this.getPaytableCont(this.paytable[6], 650, 50, 'imgSymbolGnome');
-        screen.addChild(wildCont);
-
-        const cartCont = this.getPaytableCont(this.paytable[5], 50, 350, 'imgSymbolCart');
-        screen.addChild(cartCont);
-
-        const goldCont = this.getPaytableCont(this.paytable[4], 650, 350, 'imgSymbolGold');
-        screen.addChild(goldCont);
-
-        const tntCont = this.getPaytableCont(this.paytable[3], 50, 650, 'imgSymbolTnt');
-        screen.addChild(tntCont);
-
-        const helmCont = this.getPaytableCont(this.paytable[2], 650, 650, 'imgSymbolHelmet');
-        screen.addChild(helmCont);
-
-        const pickCont = this.getPaytableCont(this.paytable[1], 50, 950, 'imgSymbolPick');
-        screen.addChild(pickCont);
-
-        const bootsCont = this.getPaytableCont(this.paytable[0], 650, 950, 'imgSymbolBoots');
-        screen.addChild(bootsCont);
-
-
-        const lineRulesText = new PIXI.Text({
-            text: this.getText("lines_rules"),
-            style: {
-                fill: "#ffffff",
-                fontSize: 45,
-                fontWeight: "bold",
-
-                wordWrap: true,
-                wordWrapWidth: 1100,
-                breakWords: false,
-                align: "justify"
+        root.destroyScroll = () => {
+            if (canvas) {
+                canvas.removeEventListener('wheel', onWheel);
             }
-        });
-        lineRulesText.x = 70;
-        lineRulesText.y = 1250;
-        screen.addChild(lineRulesText);
-        this.texts.helpLineRules = lineRulesText;
+        };
 
-        // title
-        let paytableY = 970 + lineRulesText.height;
-        const title = new PIXI.Text({
-            text: this.getText("lines2"),
-            style: {
-                fill: 0xffffff,
-                fontSize: 72,
-                fontWeight: "bold"
+        root.refreshScroll();
+
+        return root;
+    },
+
+    /*    async buildHelpModal() {
+            const screen = new PIXI.Container();
+            screen.removeChildren();
+            this.modals.help = screen;
+            this.gameRoot.addChild(screen);
+            screen.visible = false;
+
+            // Поведение экрана
+            screen.eventMode = "static";
+            let __drag = false;
+            let __dragMoved = false;
+            let __startGlobalY = 0;
+            let __startScreenY = 0;
+            const __topY = screen.y+10;
+            screen.on("pointerdown", (e) => {
+                e.stopPropagation();
+                __drag = true;
+                __dragMoved = false;
+                __startGlobalY = e.global.y;
+                __startScreenY = screen.y;
+            });
+            screen.on("pointermove", (e) => {
+                if (!__drag) return;
+                e.stopPropagation();
+                const dy = e.global.y - __startGlobalY;
+                if (!__dragMoved && Math.abs(dy) >= 6) __dragMoved = true;
+                if (__dragMoved) {
+                    let ny = __startScreenY + dy;
+
+                    const minY = __topY;
+                    const maxY = Math.min(
+                        __topY,
+                        this.gameHeight - screen.height + __topY
+                    );
+
+                    if (ny > minY) ny = minY;
+                    if (ny < maxY) ny = maxY;
+
+                    screen.y = ny;
+                }
+            });
+            const __endDrag = (e) => {
+                if (!__drag) return;
+                e.stopPropagation();
+
+                const wasMoved = __dragMoved;
+
+                __drag = false;
+                __dragMoved = false;
+
+                if (!wasMoved) this.closeMenu();
+            };
+
+            screen.on("pointerup", __endDrag);
+            screen.on("pointerupoutside", __endDrag);
+
+            // wheel на контейнер через DOM (минимально)
+            if (!this.__helpWheelHandler) {
+                this.__helpWheelHandler = (ev) => {
+                    if (!screen.visible) return;
+                    ev.preventDefault();
+                    let ny = screen.y - ev.deltaY;
+
+                    const minY = __topY;
+                    const maxY = Math.min(
+                        __topY,
+                        this.gameHeight - screen.height + __topY
+                    );
+
+                    if (ny > minY) ny = minY;
+                    if (ny < maxY) ny = maxY;
+
+                    screen.y = ny;
+                };
+                this.pixi.canvas.addEventListener("wheel", this.__helpWheelHandler, { passive: false });
+
             }
-        });
-        title.anchor.set(0.5, 0);
-        title.x = (this.gameWidth - 20) / 2;
-        title.y = paytableY + 300;
-        screen.addChild(title);
-        this.texts.helpLinesTitle = title;
 
-// Генерация линий
-        let lineX = 50;
-        let lineY = title.y + title.height + 30;
+            // Содержимое экрана
+            screen.x = 10;
+            screen.y = 10;
 
-        const items = [];
-        this.data.lines.forEach((line, key) => {
-            const lineNum = key+1;
+            const bg = new PIXI.Graphics();
+            screen.addChild(bg);
 
-            const c = new PIXI.Container();
+            // Paytable
+            const scatterCont = this.getPaytableCont(this.paytable[7], 50, 50, 'imgSymbolScatter');
+            screen.addChild(scatterCont);
 
-            const t = new PIXI.Text({
-                text: lineNum + ":",
+            const wildCont = this.getPaytableCont(this.paytable[6], 650, 50, 'imgSymbolGnome');
+            screen.addChild(wildCont);
+
+            const cartCont = this.getPaytableCont(this.paytable[5], 50, 350, 'imgSymbolCart');
+            screen.addChild(cartCont);
+
+            const goldCont = this.getPaytableCont(this.paytable[4], 650, 350, 'imgSymbolGold');
+            screen.addChild(goldCont);
+
+            const tntCont = this.getPaytableCont(this.paytable[3], 50, 650, 'imgSymbolTnt');
+            screen.addChild(tntCont);
+
+            const helmCont = this.getPaytableCont(this.paytable[2], 650, 650, 'imgSymbolHelmet');
+            screen.addChild(helmCont);
+
+            const pickCont = this.getPaytableCont(this.paytable[1], 50, 950, 'imgSymbolPick');
+            screen.addChild(pickCont);
+
+            const bootsCont = this.getPaytableCont(this.paytable[0], 650, 950, 'imgSymbolBoots');
+            screen.addChild(bootsCont);
+
+
+            const lineRulesText = new PIXI.Text({
+                text: this.getText("lines_rules"),
+                style: {
+                    fill: "#ffffff",
+                    fontSize: 45,
+                    fontWeight: "bold",
+
+                    wordWrap: true,
+                    wordWrapWidth: 1100,
+                    breakWords: false,
+                    align: "justify"
+                }
+            });
+            lineRulesText.x = 70;
+            lineRulesText.y = 1250;
+            screen.addChild(lineRulesText);
+            this.texts.helpLineRules = lineRulesText;
+
+            // title
+            let paytableY = 970 + lineRulesText.height;
+            const title = new PIXI.Text({
+                text: this.getText("lines2"),
                 style: {
                     fill: 0xffffff,
-                    fontSize: 36,
+                    fontSize: 72,
                     fontWeight: "bold"
                 }
             });
-            c.addChild(t);
+            title.anchor.set(0.5, 0);
+            title.x = (this.gameWidth - 20) / 2;
+            title.y = paytableY + 300;
+            screen.addChild(title);
+            this.texts.helpLinesTitle = title;
 
-            const mx = 80;
-            this.drawLinesMatrix(c, line, "#fbb03b", mx, 0, 30, 15, 4);
+    // Генерация линий
+            let lineX = 50;
+            let lineY = title.y + title.height + 30;
 
-            t.y = ((3 * 30 + 2 * 15) - t.height) / 2;
+            const items = [];
+            this.data.lines.forEach((line, key) => {
+                const lineNum = key+1;
 
-            items.push(c);
-            screen.addChild(c);
-        });
+                const c = new PIXI.Container();
 
-// layout (centered)
-        let row = [];
-        let rowW = 0;
-        let y = lineY;
+                const t = new PIXI.Text({
+                    text: lineNum + ":",
+                    style: {
+                        fill: 0xffffff,
+                        fontSize: 36,
+                        fontWeight: "bold"
+                    }
+                });
+                c.addChild(t);
 
-        const flushRow = () => {
-            if (!row.length) return;
-            let x = ((this.gameWidth - 20) - rowW) / 2;
-            for (const it of row) {
-                it.x = x;
-                it.y = y;
-                x += it.width + 60;
+                const mx = 80;
+                this.drawLinesMatrix(c, line, "#fbb03b", mx, 0, 30, 15, 4);
+
+                t.y = ((3 * 30 + 2 * 15) - t.height) / 2;
+
+                items.push(c);
+                screen.addChild(c);
+            });
+
+    // layout (centered)
+            let row = [];
+            let rowW = 0;
+            let y = lineY;
+
+            const flushRow = () => {
+                if (!row.length) return;
+                let x = ((this.gameWidth - 20) - rowW) / 2;
+                for (const it of row) {
+                    it.x = x;
+                    it.y = y;
+                    x += it.width + 60;
+                }
+                y += (3 * 30 + 2 * 15) + 40;
+                row = [];
+                rowW = 0;
+            };
+
+            for (const it of items) {
+                const w = it.width;
+                const nextW = row.length ? (rowW + 60 + w) : w;
+
+                if (nextW > (this.gameWidth - 20) && row.length) {
+                    flushRow();
+                }
+
+                rowW = row.length ? (rowW + 60 + w) : w;
+                row.push(it);
             }
-            y += (3 * 30 + 2 * 15) + 40;
-            row = [];
-            rowW = 0;
-        };
+            flushRow();
 
-        for (const it of items) {
-            const w = it.width;
-            const nextW = row.length ? (rowW + 60 + w) : w;
+            bg.roundRect(0, 0, this.gameWidth-20, y+200, 20)
+                .fill({ color: 0x000000, alpha: 0.9 })
+                .stroke({ width: 4, color: 0xffffff });
 
-            if (nextW > (this.gameWidth - 20) && row.length) {
-                flushRow();
-            }
-
-            rowW = row.length ? (rowW + 60 + w) : w;
-            row.push(it);
-        }
-        flushRow();
-
-        bg.roundRect(0, 0, this.gameWidth-20, y+200, 20)
-            .fill({ color: 0x000000, alpha: 0.9 })
-            .stroke({ width: 4, color: 0xffffff });
-
-    },*/
+        },*/
 
     async buildPaytableModal() {
         // Конейнер
@@ -2747,7 +2946,7 @@ window.app = {
         cont.y = y;
 
         // По умолчанию правый конт
-        let bgX = -offset -5 ;
+        let bgX = -offset - 5;
         let bgY = -offset - 5;
         let imgX = 0;
         let textX = 270;
@@ -2763,9 +2962,9 @@ window.app = {
 
         const ptbg = new PIXI.Graphics();
         cont.addChild(ptbg);
-        ptbg.roundRect(bgX, bgY, 246 * 2 + offset * 2, 246 + offset * 2, 20)
-            .fill({ color: 0x000000, alpha: 0.9 });
-        //    .stroke({ width: 6, color: 0xffffff });
+        ptbg.roundRect(bgX+7, bgY+7, 240 * 2 + offset * 2, 240 + offset * 2, 30)
+            .fill({ color: 0x000000, alpha: 0.9 })
+            .stroke({ width: 3, color: '#f7931e' });
 
 
         const data = this.paytable[symId];
@@ -2789,9 +2988,9 @@ window.app = {
         for (let key = data.length - 1; key >= 0; key--) {
             if (data[key]) {
                 const text = new PIXI.Text({
-                    text: 'x' + key + ": " + data[key],
+                    text: 'x' + key + ": ",
                     style: {
-                        fill: 0xffffff,
+                        fill: '#f7931e',
                         fontSize: 50,
                         fontWeight: "bold",
                         align: align
@@ -2800,6 +2999,18 @@ window.app = {
                 cont.addChild(text);
                 text.x = textX;
                 text.y = textY;
+                const textData = new PIXI.Text({
+                    text: data[key],
+                    style: {
+                        fill: '#ffffff',
+                        fontSize: 50,
+                        fontWeight: "bold",
+                        align: align
+                    }
+                });
+                cont.addChild(textData);
+                textData.x = textX + 85;
+                textData.y = textY;
                 textY += text.height + paytableTextGap;
             }
         }
@@ -2808,15 +3019,13 @@ window.app = {
     },
 
     getPaytableCont(data, x, y, assetName) {
-        const paytableTextX = 300;
-        let textY = 15;
+        const paytableTextX = 0;
+        let textY = 250;
         const count = data.filter(v => v).length;
-        let paytableTextGap = 20;
+        let paytableTextGap = 10;
         if (count > 3) {
-            textY = 2;
-            paytableTextGap = 7;
+            paytableTextGap = 2;
         }
-
 
         const cont = new PIXI.Container();
         cont.x = x;
@@ -2826,21 +3035,43 @@ window.app = {
         const img = new PIXI.Sprite(PIXI.Assets.get(assetName));
         cont.addChild(img);
 
+        const center = cont.width/2;
+
         // Таблица
+        const textCont = new PIXI.Container();
         for (let key = data.length - 1; key >= 0; key--) {
             if (data[key]) {
-                const text = new PIXI.Text({
-                    text: 'x' + key + ": " + data[key],
+                const itemCont = new PIXI.Container();
+                const textTitle = new PIXI.Text({
+                    text: 'x' + key,
                     style: {
-                        fill: 0xffffff,
-                        fontSize: 50,
+                        fill: '#f7931e',
+                        fontSize: 40,
                         fontWeight: "bold"
                     }
                 });
-                cont.addChild(text);
-                text.x = paytableTextX;
-                text.y = textY;
-                textY += text.height + paytableTextGap;
+                itemCont.addChild(textTitle);
+
+                const textData = new PIXI.Text({
+                    text: this.formatBalance(data[key]) + ' ' + this.data.currency,
+                    style: {
+                        fill: 0xffffff,
+                        fontSize: 40,
+                        fontWeight: "bold"
+                    }
+                });
+                textData.x = textTitle.width + 15;
+                itemCont.addChild(textData);
+
+                itemCont.x = center - itemCont.width/2;
+                itemCont.y = textY;
+                cont.addChild(itemCont);
+
+
+
+
+
+                textY += itemCont.height + paytableTextGap;
             }
         }
 
@@ -3060,7 +3291,7 @@ window.app = {
         testButton.interactive = true;
         testButton.cursor = 'pointer';
         testButton.on('pointertap', () => {
-            this.beginJpAnimation(true);
+            this.beginJpGame(true);
         });
 
         const test2Button = new PIXI.Container();
@@ -3086,7 +3317,7 @@ window.app = {
         test2Button.interactive = true;
         test2Button.cursor = 'pointer';
         test2Button.on('pointertap', () => {
-            this.apiJpFinish();
+            //this.apiJpFinish();
         });
 
         const test3Button = new PIXI.Container();
@@ -3810,7 +4041,8 @@ window.app = {
 
         btn.on('pointertap', async () => {
             //await this.buildHelpModal();
-            this.modals.help.visible = true;
+            this.openMenu();
+            this.toggleMenu('info');
         });
 
         btn.on('pointerupoutside', () => {
