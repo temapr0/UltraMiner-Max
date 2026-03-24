@@ -106,6 +106,8 @@ window.app = {
         {"name": "imgSymbolScatter",    "path": "../pixi/assets/images/symbols/scatter.png"},
 
         {"name": "imgWheel",            "path": "../pixi/assets/images/fortuneWheel.png"},
+        {"name": "imgWheelGlow",        "path": "../pixi/assets/images/wheelGlow.png"},
+        {"name": "imgWheelLights",      "path": "../pixi/assets/images/wheelLights.png"},
         {"name": "imgWheelTest",        "path": "../pixi/assets/images/wheel_test.png"},
         {"name": "imgWheelTest2",       "path": "../pixi/assets/images/wheel_test2.png"},
         {"name": "imgYouWonTransparent","path": "../pixi/assets/images/imgYouWonTransparent.png"}
@@ -5747,6 +5749,47 @@ window.app = {
         screen.addChild(wheel);
         screen.wheel = wheel;
 
+        const lights = new PIXI.Sprite(PIXI.Assets.get('imgWheelLights'));
+        lights.scale = 0.45;
+        lights.anchor.set(0.5);
+        lights.x = cx;
+        lights.y = cy + 550;
+        screen.addChild(lights);
+        screen.lights = lights;
+
+        const maskW = Math.round(wheel.width / 1.1);
+        const maskH = Math.round(wheel.height / 2);
+
+        const canvas = document.createElement('canvas');
+        canvas.width = maskW;
+        canvas.height = maskH;
+
+        const ctx = canvas.getContext('2d');
+
+        const grad = ctx.createLinearGradient(0, 0, maskW, 0);
+        grad.addColorStop(0, 'rgba(255,255,255,0)');
+        grad.addColorStop(0.25, 'rgba(255,255,255,1)');
+        grad.addColorStop(0.75, 'rgba(255,255,255,1)');
+        grad.addColorStop(1, 'rgba(255,255,255,0)');
+
+        ctx.clearRect(0, 0, maskW, maskH);
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, maskW, maskH);
+
+        const texture = PIXI.Texture.from(canvas);
+        const lightsMask = new PIXI.Sprite(texture);
+
+        //lightsMask.anchor.set(0.5, 0.5);
+        lightsMask.x = wheel.x - lightsMask.width/2;
+        lightsMask.y = wheel.y - lightsMask.height;
+
+        screen.addChild(lightsMask);
+        lights.mask = lightsMask;
+        screen.lightsMask = lightsMask;
+
+
+
+
         const wheelArrowUp = new PIXI.Sprite(PIXI.Assets.get('imgWheelArrow'));
         //wheelArrowUp.scale = 0.7;
         wheelArrowUp.anchor.set(0.5);
@@ -5826,7 +5869,7 @@ window.app = {
                 screen.timer.stop();
                 btn.counter.visible = false;
                 btn.ring.visible = false;
-                this.runJackpotFlow(wheel);
+                this.runJackpotFlow([wheel, lights]);
             } else {
                 this.finishRotateToAngleNow();
             }
@@ -6457,13 +6500,15 @@ window.app = {
     startWheelSpin(sprite, speed = 0.35) {
         console.log('Wheel starting');
         const ticker = PIXI.Ticker.shared;
-
         if (this._wheelSpinTick) return;
-
+        const sprites = Array.isArray(sprite) ? sprite : [sprite];
         this._wheelSpinTick = () => {
-            sprite.rotation += speed;
+            for (const s of sprites) {
+                if (s) {
+                    s.rotation += speed;
+                }
+            }
         };
-
         ticker.add(this._wheelSpinTick);
     },
 
@@ -6482,9 +6527,14 @@ window.app = {
             this._jackpotRotateTick = null;
         }
 
+        const sprites = Array.isArray(sprite) ? sprite : [sprite];
+        const mainSprite = sprites[0];
+
+        if (!mainSprite) return;
+
         const start = performance.now();
 
-        const startRot  = sprite.rotation;
+        const startRot  = mainSprite.rotation;
         const targetRot = targetDeg * Math.PI / 180;
 
         let deltaToTarget = targetRot - startRot;
@@ -6497,11 +6547,23 @@ window.app = {
         const tick = () => {
             const t = Math.min((performance.now() - start) / duration, 1);
             const eased = 1 - Math.pow(1 - t, 3);
+            const rot = startRot + totalDelta * eased;
 
-            sprite.rotation = startRot + totalDelta * eased;
+            for (const s of sprites) {
+                if (s) {
+                    s.rotation = rot;
+                }
+            }
 
             if (t === 1) {
-                sprite.rotation = startRot + totalDelta;
+                const finalRot = startRot + totalDelta;
+
+                for (const s of sprites) {
+                    if (s) {
+                        s.rotation = finalRot;
+                    }
+                }
+
                 ticker.remove(tick);
                 this._jackpotRotateTick = null;
                 this._jackpotRotateSprite = null;
