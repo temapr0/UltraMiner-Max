@@ -108,6 +108,7 @@ window.app = {
         {"name": "imgWheel",            "path": "../pixi/assets/images/fortuneWheel.png"},
         {"name": "imgWheelGlow",        "path": "../pixi/assets/images/wheelGlow.png"},
         {"name": "imgWheelLights",      "path": "../pixi/assets/images/wheelLights.png"},
+        {"name": "imgWheelHeadLights",  "path": "../pixi/assets/images/wheelHeadLights.png"},
         {"name": "imgWheelTest",        "path": "../pixi/assets/images/wheel_test.png"},
         {"name": "imgWheelTest2",       "path": "../pixi/assets/images/wheel_test2.png"},
         {"name": "imgYouWonTransparent","path": "../pixi/assets/images/imgYouWonTransparent.png"}
@@ -550,6 +551,9 @@ window.app = {
         await this.createScreens();
 
         await PIXI.Assets.load({alias: 'imgLogo', src: '../pixi/assets/images/logo.png'});
+        await PIXI.Assets.load({alias: 'imgLogoAnim1', src: '../pixi/assets/sprites/logoAnim1.json'});
+        await PIXI.Assets.load({alias: 'imgLogoAnim2', src: '../pixi/assets/sprites/logoAnim2.json'});
+        await PIXI.Assets.load({alias: 'imgLogoAnim3', src: '../pixi/assets/sprites/logoAnim3.json'});
         await PIXI.Assets.load({alias: 'imgPreloaderProgressBar', src: '../pixi/assets/images/imgPreloaderProgressBar.svg'});
         await PIXI.Assets.load({alias: 'imgPreloaderProgressBlock', src: '../pixi/assets/images/imgPreloaderProgressBlock.svg'});
         await PIXI.Assets.load({alias: 'imgBtnBgPreloader', src: '../pixi/assets/images/buttonsNew/imgBtnBgPreloader.svg'});
@@ -682,6 +686,45 @@ window.app = {
         );
     },
 
+    makeLogoAnimated() {
+        const sheets = [
+            PIXI.Assets.get('imgLogoAnim1'),
+            PIXI.Assets.get('imgLogoAnim2'),
+            PIXI.Assets.get('imgLogoAnim3')
+        ];
+
+        const textures = [];
+
+        for (const sh of sheets) {
+            const anim = sh?.animations?.main;
+            if (anim && anim.length) {
+                textures.push(...anim);
+            }
+        }
+
+        if (!textures.length) {
+            console.log('makeLogoAnimated: textures missing', { sheets });
+            return null;
+        }
+
+        const sprite = new PIXI.AnimatedSprite(textures);
+        sprite.animationSpeed = 0.15;
+
+        const delay = 3000; // пауза между циклами (мс)
+
+        sprite.loop = false;
+
+        sprite.onComplete = () => {
+            setTimeout(() => {
+                sprite.gotoAndPlay(0);
+            }, delay);
+        };
+
+        sprite.play();
+
+        return sprite;
+    },
+
     // переключение экранов
     showScreen(name) {
 //        for (const s in this.screens) {
@@ -703,7 +746,7 @@ window.app = {
         //console.log("Screen:", name);
     },
 
-    buildLoadingScreen() {
+    async buildLoadingScreen() {
         const screen = this.screens.loading;
         screen.removeChildren();
 
@@ -723,8 +766,9 @@ window.app = {
         screen.addChild(bg);
 
         // Лого
-        const logo = new PIXI.Sprite(PIXI.Assets.get('imgLogo'));
-        logo.scale.set(0.6);
+        const logo = await this.makeLogoAnimated();
+        if (!logo) return;
+        logo.scale.set(1.4);
         logo.x = cx - logo.width/2;
         logo.y = cy - 300 - logo.height/2;
         screen.addChild(logo);
@@ -828,8 +872,9 @@ window.app = {
         screen.addChild(bg);
 
         // Лого
-        const logo = new PIXI.Sprite(PIXI.Assets.get('imgLogo'));
-        logo.scale.set(0.6);
+        const logo = await this.makeLogoAnimated();
+        if (!logo) return;
+        logo.scale.set(1.4);
         logo.x = cx - logo.width/2;
         logo.y = cy - 300 - logo.height/2;
         screen.addChild(logo);
@@ -3353,11 +3398,11 @@ window.app = {
         const cy = this.gameHeight / 2;
 
         // Основные блоки
-        const logo = new PIXI.Sprite(PIXI.Assets.get('imgLogo'));
-        logo.anchor.set(0.5, 0.5);
-        logo.x = cx;
-        logo.y = 280;
-        logo.scale = 0.5;
+        const logo = await this.makeLogoAnimated();
+        if (!logo) return;
+        logo.scale.set(1.1);
+        logo.x = cx - logo.width/2;
+        logo.y = cy - 300 - logo.height/2;
         screen.logo = logo;
         screen.addChild(logo);
 
@@ -3806,7 +3851,7 @@ window.app = {
 
         // Лого
         const maxLogoY = Math.max(this.reelsContainer.y - buttons.logo.height, 0);
-        const defLogoY = 280;
+        const defLogoY = 80;
         const logoY = Math.min(defLogoY, maxLogoY);
         buttons.logo.y = logoY;
 
@@ -4625,8 +4670,6 @@ window.app = {
 
         return btn;
     },
-
-
 
     bindButtonMicroAnim(btn, opts = {}) {
         const target = opts.target ?? btn;
@@ -5816,6 +5859,54 @@ window.app = {
         screen.addChild(wheelHead);
         screen.wheelHead = wheelHead;
 
+        const wheelHeadLights = new PIXI.Sprite(PIXI.Assets.get('imgWheelHeadLights'));
+        wheelHeadLights.scale = 0.37;
+        wheelHeadLights.anchor.set(0.5);
+        wheelHeadLights.x = cx;
+        wheelHeadLights.y = cy + 550;
+        screen.addChild(wheelHeadLights);
+        screen.wheelHeadLights = wheelHeadLights;
+
+        const maskW1 = Math.round(wheelHead.width / 3);
+        const maskH1 = Math.round(wheelHead.height / 3);
+
+        const canvas1 = document.createElement('canvas');
+        canvas1.width = maskW1;
+        canvas1.height = maskH1;
+
+        const ctx1 = canvas1.getContext('2d');
+
+        const grad1 = ctx1.createLinearGradient(0, 0, 0, maskH1);
+        grad1.addColorStop(0, 'rgba(255,255,255,0)');
+        grad1.addColorStop(0.55, 'rgba(255,255,255,0)');
+        grad1.addColorStop(0.75, 'rgba(255,255,255,1)');
+        grad1.addColorStop(1, 'rgba(255,255,255,1)');
+
+        ctx1.clearRect(0, 0, maskW1, maskH1);
+        ctx1.fillStyle = grad1;
+        ctx1.fillRect(0, 0, maskW1, maskH1);
+
+        const texture1 = PIXI.Texture.from(canvas1);
+        const lightsMask1 = new PIXI.Sprite(texture1);
+
+        //lightsMask.anchor.set(0.5, 0.5);
+        lightsMask1.pivot.set(lightsMask1.width / 2, lightsMask1.height / 2);
+        lightsMask1.x = wheelHeadLights.x;
+        lightsMask1.y = wheelHeadLights.y;
+        //lightsMask1.x = wheelHeadLights.x - lightsMask1.width/2;
+        //lightsMask1.y = wheelHeadLights.y - lightsMask1.height;
+
+        screen.addChild(lightsMask1);
+        wheelHeadLights.mask = lightsMask1;
+        screen.lightsMask1 = lightsMask1;
+
+
+
+
+
+
+
+
         // Кнопка
         const btn = new PIXI.Container();
         btn.x = cx-1;
@@ -5869,7 +5960,7 @@ window.app = {
                 screen.timer.stop();
                 btn.counter.visible = false;
                 btn.ring.visible = false;
-                this.runJackpotFlow([wheel, lights]);
+                this.runJackpotFlow([wheel, lights, lightsMask1]);
             } else {
                 this.finishRotateToAngleNow();
             }
@@ -6356,7 +6447,7 @@ window.app = {
         }
 
         const timer = this.startCountdown(this.screens.JackpotGame.btn.counter, 120, () => {
-            this.runJackpotFlow(this.screens.JackpotGame.wheel); // событие после таймера
+            this.runJackpotFlow([this.screens.JackpotGame.wheel, this.screens.JackpotGame.lights, this.screens.JackpotGame.lightsMask1]); // событие после таймера
         });
         this.screens.JackpotGame.btn.counter.visible = true;
         this.screens.JackpotGame.timer = timer;
