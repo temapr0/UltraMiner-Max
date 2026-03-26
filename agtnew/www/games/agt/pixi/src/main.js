@@ -111,7 +111,8 @@ window.app = {
         {"name": "imgWheelHeadLights",  "path": "../pixi/assets/images/wheelHeadLights.png"},
         {"name": "imgWheelTest",        "path": "../pixi/assets/images/wheel_test.png"},
         {"name": "imgWheelTest2",       "path": "../pixi/assets/images/wheel_test2.png"},
-        {"name": "imgYouWonTransparent","path": "../pixi/assets/images/imgYouWonTransparent.png"}
+        {"name": "imgYouWonTransparent","path": "../pixi/assets/images/imgYouWonTransparent.png"},
+        {"name": "imgYouWon",           "path": "../pixi/assets/images/imgYouWon.png"}
 
     ],
     assetsMedia: [
@@ -129,7 +130,8 @@ window.app = {
 
         {"name": "imgWheelRotation",    "path": "../pixi/assets/images/wheelTest4.png"},
         {"name": "imgWheelHead",        "path": "../pixi/assets/images/wheelHeadM.png"},
-        {"name": "imgWheelArrow",       "path": "../pixi/assets/images/imgWheelArrow.svg"},
+        {"name": "imgJpWheel1",          "path": "../pixi/assets/images/imgJpWheel.png"},
+        {"name": "imgJpArrow",          "path": "../pixi/assets/images/imgJpArrow.png"},
         {"name": "imgJpBoard1",         "path": "../pixi/assets/sprites/jpBoard1.json"},
         {"name": "imgJpBoard2",         "path": "../pixi/assets/sprites/jpBoard2.json"},
         {"name": "imgJpBoard3",         "path": "../pixi/assets/sprites/jpBoard3.json"},
@@ -542,7 +544,7 @@ window.app = {
         this.lang = this.lsGet('data', 'lang', 'en');
         this.sound = this.lsGet('data', 'sound', true);
         this.isVibration = this.lsGet('data', 'vibrate', false);
-        this.game.lines = this.lsGet('game', 'lines', 1);
+        this.game.lines = this.lsGet('game', 'lines', null);
         this.game.bet = this.lsGet('game', 'bet', 1);
 
         this.gameRoot = new PIXI.Container();
@@ -971,6 +973,11 @@ window.app = {
             e.stopPropagation();
         });
 
+        const bg = this.buildFullscreenFader((e)=>{
+            screen.visible = false;
+        });
+        screen.addChild(bg);
+
         const mainCont = new PIXI.Container();
         mainCont.x = 50;
 
@@ -1074,7 +1081,7 @@ window.app = {
                 posY++;
             }
             const btn = makeButton(
-                lineKey,
+                Number(lineKey).toFixed(0),
                 'Lines',
                 posX*276,
                 posY*145,
@@ -1096,13 +1103,13 @@ window.app = {
 
         const linesY = (posY+1)*145 + 40;
 
-/*
-        const separator = new PIXI.Graphics();
-        separator.moveTo(100, linesY)
-            .lineTo(1030, linesY)
-            .stroke({ width: 7, color: "#ffffff" });
-        mainCont.addChild(separator);
-*/
+        /*
+                const separator = new PIXI.Graphics();
+                separator.moveTo(100, linesY)
+                    .lineTo(1030, linesY)
+                    .stroke({ width: 7, color: "#ffffff" });
+                mainCont.addChild(separator);
+        */
         const separator = new PIXI.Graphics();
 
         const width = 1030 - 100;
@@ -1127,7 +1134,7 @@ window.app = {
                     posY++;
                 }
                 const btn = makeButton(
-                    elm,
+                    Number(elm).toFixed(2),
                     this.data.currency,
                     posX*276,
                     posY*145,
@@ -1155,119 +1162,119 @@ window.app = {
 
 
 
-/*
-        const makeButton = (label, width, height, onClick, active = false) => {
-            const btn = new PIXI.Container();
-            btn.eventMode = "static";
-            btn.cursor = active ? "default" : "pointer";
+        /*
+                const makeButton = (label, width, height, onClick, active = false) => {
+                    const btn = new PIXI.Container();
+                    btn.eventMode = "static";
+                    btn.cursor = active ? "default" : "pointer";
 
-            const bg = new PIXI.Graphics();
-            bg.roundRect(0, 0, width, height, 25)
-                .fill({ color: active ? 0x5555aa : 0x333333 })
-                .stroke({ width: 4, color: active ? 0xffffff : 0x777777 });
-            btn.addChild(bg);
+                    const bg = new PIXI.Graphics();
+                    bg.roundRect(0, 0, width, height, 25)
+                        .fill({ color: active ? 0x5555aa : 0x333333 })
+                        .stroke({ width: 4, color: active ? 0xffffff : 0x777777 });
+                    btn.addChild(bg);
 
-            const txt = new PIXI.Text({
-                text: label,
-                style: {
-                    fill: active ? "#ffffaa" : "white",
-                    fontSize: 44,
-                    fontWeight: "bold"
-                }
-            });
-            txt.x = (width - txt.width) / 2;
-            txt.y = (height - txt.height) / 2;
-            btn.addChild(txt);
+                    const txt = new PIXI.Text({
+                        text: label,
+                        style: {
+                            fill: active ? "#ffffaa" : "white",
+                            fontSize: 44,
+                            fontWeight: "bold"
+                        }
+                    });
+                    txt.x = (width - txt.width) / 2;
+                    txt.y = (height - txt.height) / 2;
+                    btn.addChild(txt);
 
-                btn.on("pointerover", () => { bg.tint = 0x666666; });
-                btn.on("pointerout", () => { bg.tint = 0xffffff; });
-                btn.on("pointerdown", onClick);
+                        btn.on("pointerover", () => { bg.tint = 0x666666; });
+                        btn.on("pointerout", () => { bg.tint = 0xffffff; });
+                        btn.on("pointerdown", onClick);
 
-            return btn;
-        };
+                    return btn;
+                };
 
 
-        const lineKeys = Object.keys(this.data.bets);   // ["243", "244", ...]
-        let selectedLines = null;
+                const lineKeys = Object.keys(this.data.bets);   // ["243", "244", ...]
+                let selectedLines = null;
 
-        const renderLines = () => {
-            linesContainer.removeChildren();
+                const renderLines = () => {
+                    linesContainer.removeChildren();
 
-            let x = 0;
-            let y = 0;
+                    let x = 0;
+                    let y = 0;
 
-            lineKeys.forEach((lineKey) => {
-                const isActive = this.game.lines === parseInt(lineKey);
+                    lineKeys.forEach((lineKey) => {
+                        const isActive = this.game.lines === parseInt(lineKey);
 
-                const btn = makeButton(
-                    `${lineKey} lines`,
-                    btnWidth,
-                    btnHeight,
-                    () => {
-                        //this.game.lines = parseInt(lineKey);
-                        renderLines();           // обновляем выделение
-                        renderBets(lineKey);     // обновляем список ставок
-                    },
-                    isActive
-                );
+                        const btn = makeButton(
+                            `${lineKey} lines`,
+                            btnWidth,
+                            btnHeight,
+                            () => {
+                                //this.game.lines = parseInt(lineKey);
+                                renderLines();           // обновляем выделение
+                                renderBets(lineKey);     // обновляем список ставок
+                            },
+                            isActive
+                        );
 
-                btn.x = x;
-                btn.y = y;
-                x += btnWidth + padding;
-                if (x > 800) {
-                    x = 0;
-                    y += btnHeight + padding;
-                }
-                linesContainer.addChild(btn);
-            });
+                        btn.x = x;
+                        btn.y = y;
+                        x += btnWidth + padding;
+                        if (x > 800) {
+                            x = 0;
+                            y += btnHeight + padding;
+                        }
+                        linesContainer.addChild(btn);
+                    });
 
-            // Если при отрисовке уже есть активная линия - сразу рисуем ставки
-            if (this.game.lines) {
-                renderBets(String(this.game.lines));
-            }
-        };
+                    // Если при отрисовке уже есть активная линия - сразу рисуем ставки
+                    if (this.game.lines) {
+                        renderBets(String(this.game.lines));
+                    }
+                };
 
-        const renderBets = (lineKey) => {
-            betsContainer.removeChildren();
-            const betList = this.data.bets[lineKey];
-            if (!betList) return;
+                const renderBets = (lineKey) => {
+                    betsContainer.removeChildren();
+                    const betList = this.data.bets[lineKey];
+                    if (!betList) return;
 
-            let x = 0;
-            let y = 0;
+                    let x = 0;
+                    let y = 0;
 
-            betList.forEach((betValue) => {
-                const isActive = this.game.bet === betValue;
+                    betList.forEach((betValue) => {
+                        const isActive = this.game.bet === betValue;
 
-                const btn = makeButton(
-                    `${betValue}`,
-                    btnWidth,
-                    btnHeight,
-                    () => {
-                        this.game.lines = lineKey;
-                        this.game.bet = betValue;
-                        this.lsSet("game", "lines", this.game.lines);
-                        this.lsSet("game", "bet", this.game.bet);
-                        renderBets(lineKey);  // обновляем выделение
-                        this.data.betText.text = betValue;
-                        this.data.linesText.text = lineKey;
-                        this.closeModal(this.modals.bets);
-                    },
-                    isActive
-                );
+                        const btn = makeButton(
+                            `${betValue}`,
+                            btnWidth,
+                            btnHeight,
+                            () => {
+                                this.game.lines = lineKey;
+                                this.game.bet = betValue;
+                                this.lsSet("game", "lines", this.game.lines);
+                                this.lsSet("game", "bet", this.game.bet);
+                                renderBets(lineKey);  // обновляем выделение
+                                this.data.betText.text = betValue;
+                                this.data.linesText.text = lineKey;
+                                this.closeModal(this.modals.bets);
+                            },
+                            isActive
+                        );
 
-                btn.x = x;
-                btn.y = y;
-                x += btnWidth + padding;
-                if (x > 800) {
-                    x = 0;
-                    y += btnHeight + padding;
-                }
-                betsContainer.addChild(btn);
-            });
-        };
+                        btn.x = x;
+                        btn.y = y;
+                        x += btnWidth + padding;
+                        if (x > 800) {
+                            x = 0;
+                            y += btnHeight + padding;
+                        }
+                        betsContainer.addChild(btn);
+                    });
+                };
 
-        renderLines();
-*/
+                renderLines();
+        */
     },
 
     async buildWinsModal() {
@@ -1328,6 +1335,11 @@ window.app = {
         screen.on("pointerdown", (e) => {
             e.stopPropagation();
         });
+
+        const screenBg = this.buildFullscreenFader((e)=>{
+            screen.visible = false;
+        });
+        screen.addChild(screenBg);
 
         const windowContainer = new PIXI.Container();
         windowContainer.x = 210;
@@ -2414,7 +2426,7 @@ window.app = {
 
     },
 
-    buildFullscreenFader(alpha = 0.7) {
+    buildFullscreenFader(onClick = null, alpha = 0.7) {
         const ww = window.innerWidth;
         const wh = window.innerHeight;
 
@@ -2427,6 +2439,15 @@ window.app = {
         const bg = new PIXI.Graphics();
         bg.roundRect(bgFrom, 0, bgTo, this.gameHeight, 0)
             .fill({ color: 0x000000, alpha: alpha });
+
+        bg.eventMode = 'static';
+
+        if (onClick) {
+            bg.on('pointertap', (e) => {
+                e.stopPropagation();
+                onClick(e);
+            });
+        }
 
         return bg;
     },
@@ -5030,12 +5051,6 @@ window.app = {
             const fallbackName = assetNames[0].replace("anim", "img");
             const texture = PIXI.Assets.get(fallbackName);
             const sp = new PIXI.Sprite(texture ?? PIXI.Texture.WHITE);
-/*
-            if (dbg !== undefined) {
-                const t = new PIXI.Text({ text: String(dbg), style:{ fill:"#ff00ff", fontSize:56, fontWeight:"bold", stroke:"#000", strokeThickness:3 }});
-                sp.addChild(t);
-            }
-*/
             return sp;
         }
 
@@ -5044,12 +5059,6 @@ window.app = {
         anim.y = -5;
         anim.x = -5;
 
-/*
-        if (dbg !== undefined) {
-            const t = new PIXI.Text({ text: String(dbg), style:{ fill:"#ff00ff", fontSize:56, fontWeight:"bold", stroke:"#000", strokeThickness:3 }});
-            anim.addChild(t);
-        }
-*/
 
         anim.animation = function (enable) {
             if (enable) {
@@ -5409,31 +5418,56 @@ window.app = {
             const animName = winText + "Win";
             const frames = (sheet && sheet.animations && sheet.animations[animName]) ? sheet.animations[animName] : [];
 
+            let winLabelShadow = numberContainer.winLabelShadow;
+
             if (!winLabel) {
                 winLabel = new PIXI.AnimatedSprite(frames);
-                winLabel.anchor.set(0.5); // <-- добавить
+                winLabel.anchor.set(0.5);
                 numberContainer.winLabel = winLabel;
+
+                if (!winLabelShadow) {
+                    winLabelShadow = this.makeShadowSprite('winTexts', animName, 4, 4, 0.35);
+                    winLabelShadow.x = winLabel.x + 4;
+                    winLabelShadow.y = winLabel.y + 4;
+                    numberContainer.winLabelShadow = winLabelShadow;
+                    if (numberContainer.parent && winLabelShadow) numberContainer.parent.addChild(winLabelShadow);
+                }
+
                 if (numberContainer.parent) numberContainer.parent.addChild(winLabel);
             } else {
                 winLabel.textures = frames;
-                if (winLabel.anchor) winLabel.anchor.set(0.5); // <-- добавить
+                if (winLabel.anchor) winLabel.anchor.set(0.5);
+
+                if (!winLabelShadow) {
+                    winLabelShadow = this.makeShadowSprite('winTexts', animName, 4, 4, 0.35);
+                    winLabelShadow.x = winLabel.x + 4;
+                    winLabelShadow.y = winLabel.y + 4;
+
+                    numberContainer.winLabelShadow = winLabelShadow;
+                    if (numberContainer.parent && winLabelShadow) numberContainer.parent.addChild(winLabelShadow);
+                } else {
+                    winLabelShadow.texture = sheet.textures[animName];
+                }
             }
 
-            // если кадры в json были rotated:true
-            // если кадры в json были rotated:true (атлас собран CCW) — дополнительно разворачиваем на 180°
             if (frames[0] && frames[0].rotate) {
                 winLabel.rotation = Math.PI;
             } else {
                 winLabel.rotation = 0;
             }
 
-            winLabel.animationSpeed = 0.1; // ~3 раза в секунду
+            if (winLabelShadow) {
+                winLabelShadow.rotation = winLabel.rotation;
+                winLabelShadow.visible = true;
+            }
+
+            winLabel.animationSpeed = 0.1;
             winLabel.loop = true;
             winLabel.visible = true;
             winLabel.play();
 
-            // grats над текстом большого выигрыша
             let gratsLabel = numberContainer.gratsLabel;
+            let gratsLabelShadow = numberContainer.gratsLabelShadow;
             const gratsFrames = (sheet && sheet.animations && sheet.animations.grats) ? sheet.animations.grats : [];
 
             if (!gratsLabel) {
@@ -5444,6 +5478,15 @@ window.app = {
                 gratsLabel.play();
 
                 numberContainer.gratsLabel = gratsLabel;
+
+                if (!gratsLabelShadow) {
+                    gratsLabelShadow = this.makeShadowSprite('winTexts', 'grats', 4, 4, 0.35);
+                    gratsLabelShadow.x = gratsLabel.x + 4;
+                    gratsLabelShadow.y = gratsLabel.y + 4;
+                    numberContainer.gratsLabelShadow = gratsLabelShadow;
+                    if (numberContainer.parent && gratsLabelShadow) numberContainer.parent.addChild(gratsLabelShadow);
+                }
+
                 if (numberContainer.parent) numberContainer.parent.addChild(gratsLabel);
             } else {
                 gratsLabel.textures = gratsFrames;
@@ -5451,6 +5494,25 @@ window.app = {
                 gratsLabel.animationSpeed = 0.1;
                 gratsLabel.loop = true;
                 gratsLabel.play();
+
+                if (!gratsLabelShadow) {
+                    gratsLabelShadow = this.makeShadowSprite('winTexts', 'grats', 4, 4, 0.35);
+                    numberContainer.gratsLabelShadow = gratsLabelShadow;
+                    if (numberContainer.parent && gratsLabelShadow) numberContainer.parent.addChild(gratsLabelShadow);
+                } else {
+                    gratsLabelShadow.texture = sheet.textures['grats'];
+                }
+            }
+
+            if (gratsFrames[0] && gratsFrames[0].rotate) {
+                gratsLabel.rotation = Math.PI;
+            } else {
+                gratsLabel.rotation = 0;
+            }
+
+            if (gratsLabelShadow) {
+                gratsLabelShadow.rotation = gratsLabel.rotation;
+                gratsLabelShadow.visible = true;
             }
 
             gratsLabel.visible = true;
@@ -5458,18 +5520,20 @@ window.app = {
             clearTimeout(gratsLabel._hideTimer);
             gratsLabel._hideTimer = setTimeout(() => {
                 gratsLabel.visible = false;
+                if (gratsLabelShadow) gratsLabelShadow.visible = false;
             }, duration);
 
-
-            // скрыть через duration
             clearTimeout(winLabel._hideTimer);
             winLabel._hideTimer = setTimeout(() => {
                 winLabel.visible = false;
+                if (winLabelShadow) winLabelShadow.visible = false;
             }, duration);
 
         } else if (winLabel) {
             winLabel.visible = false;
+            if (numberContainer.winLabelShadow) numberContainer.winLabelShadow.visible = false;
             if (numberContainer.gratsLabel) numberContainer.gratsLabel.visible = false;
+            if (numberContainer.gratsLabelShadow) numberContainer.gratsLabelShadow.visible = false;
         }
 
         const easeOut = t => 1 - Math.pow(1 - t, 3);
@@ -5573,8 +5637,9 @@ window.app = {
 
         const linesKeys = Object.keys(response.full_bets);
         if (!response.full_bets?.[this.game.lines]?.includes(this.game.bet)) {
-            this.game.lines = Number(linesKeys[0]);
-            this.game.bet = response.full_bets[linesKeys[0]][0];
+            const maxLines = Math.max(...linesKeys.map(Number));
+            this.game.lines = maxLines;
+            this.game.bet = response.full_bets[maxLines][0];
             this.lsSet("game", "lines", this.game.lines);
             this.lsSet("game", "bet", this.game.bet);
         }
@@ -5584,7 +5649,7 @@ window.app = {
         this.langs = response.langs;
         this.mult = 2;
         console.log("Loaded start()");
-        //console.log(response);
+        console.log(response.full_bets);
     },
 
     async apiRestore() {
@@ -5784,8 +5849,8 @@ window.app = {
         screen.addChild(bg);
 
         // Барабан
-        const wheel = new PIXI.Sprite(PIXI.Assets.get('imgWheelRotation'));
-        wheel.scale = 0.45;
+        const wheel = new PIXI.Sprite(PIXI.Assets.get('imgJpWheel1'));
+        wheel.scale = 1.865;
         wheel.anchor.set(0.5);
         wheel.x = cx;
         wheel.y = cy + 550;
@@ -5833,17 +5898,17 @@ window.app = {
 
 
 
-        const wheelArrowUp = new PIXI.Sprite(PIXI.Assets.get('imgWheelArrow'));
-        //wheelArrowUp.scale = 0.7;
+        const wheelArrowUp = new PIXI.Sprite(PIXI.Assets.get('imgJpArrow'));
+        wheelArrowUp.scale = 0.25;
         wheelArrowUp.anchor.set(0.5);
         //wheelArrowUp.rotation = Math.PI;
         wheelArrowUp.x = cx;
-        wheelArrowUp.y = cy - 340;
+        wheelArrowUp.y = cy - 300;
         screen.addChild(wheelArrowUp);
         screen.wheelArrowUp = wheelArrowUp;
 
-        const wheelArrowDown = new PIXI.Sprite(PIXI.Assets.get('imgWheelArrow'));
-        //wheelArrowDown.scale = 0.7;
+        const wheelArrowDown = new PIXI.Sprite(PIXI.Assets.get('imgJpArrow'));
+        wheelArrowDown.scale = 0.25;
         wheelArrowDown.anchor.set(0.5);
         wheelArrowDown.rotation = Math.PI;
         wheelArrowDown.x = cx;
@@ -6533,13 +6598,23 @@ window.app = {
             .fill({ color: 0x000000, alpha: 0.5 });
         screen.addChild(bg);
 
-        const banner = new PIXI.Sprite(PIXI.Assets.get('imgYouWonTransparent'));
-        //wheel.scale = 0.45;
-        banner.anchor.set(0.5);
-        banner.x = cx;
-        banner.y = cy - 250;
+        /*
+                const banner = new PIXI.Sprite(PIXI.Assets.get('imgYouWonTransparent'));
+                //wheel.scale = 0.45;
+                banner.anchor.set(0.5);
+                banner.x = cx;
+                banner.y = cy - 250;
+                screen.addChild(banner);
+                screen.banner = banner;
+        */
+        const banner = this.makeBlinkYouWon();
+        //banner.anchor.set(0.5);
+        banner.x = cx - banner.width/2;
+        banner.y = cy - 250 - banner.height/2;
         screen.addChild(banner);
         screen.banner = banner;
+
+
 
         const winValueContainer = new PIXI.Container();
         screen.addChild(winValueContainer);
@@ -6575,6 +6650,31 @@ window.app = {
         }, 5000)
 
 
+    },
+
+    makeBlinkYouWon(speed = 0.1) {
+        const container = new PIXI.Container();
+        const t1 = PIXI.Assets.get("imgYouWon");
+        const t2 = PIXI.Assets.get("imgYouWonTransparent");
+
+        if (!t1 || !t2) {
+            console.log('makeBlinkSprite: textures missing', { asset1, asset2 });
+            return null;
+        }
+
+        const shadow = this.makeShadowSprite("imgYouWon", null, 4, 4, 0.7);
+        container.addChild(shadow);
+
+        const sprite = new PIXI.AnimatedSprite([t1, t2]);
+        sprite.animationSpeed = speed;
+        sprite.loop = true;
+        sprite.play();
+        container.addChild(sprite);
+
+        shadow.x = sprite.x + 4;
+        shadow.y = sprite.y + 4;
+
+        return container;
     },
 
     getWheelAngle(jpnum) {
@@ -6719,6 +6819,49 @@ window.app = {
 
 
 
+
+    makeShadowSprite(assetName, frameName = null, dx = 4, dy = 4, alpha = 0.35) {
+        const asset = PIXI.Assets.get(assetName);
+
+        if (!asset) {
+            console.log('makeShadowSprite: asset missing', { assetName, frameName });
+            return null;
+        }
+
+        let texture = null;
+
+        if (frameName === null) {
+            if (asset instanceof PIXI.Texture) {
+                texture = asset;
+            } else {
+                console.log('makeShadowSprite: asset is not a texture', { assetName, asset });
+                return null;
+            }
+        } else {
+            if (!asset.textures || !asset.textures[frameName]) {
+                console.log('makeShadowSprite: frame missing', { assetName, frameName, asset });
+                return null;
+            }
+
+            texture = asset.textures[frameName];
+        }
+
+        const shadow = new PIXI.Sprite(texture);
+        shadow.tint = 0x000000;
+        shadow.alpha = alpha;
+        /*
+                shadow.x = dx - shadow.width/2;
+                shadow.y = dy - shadow.height/2;
+        */
+
+        if (texture.rotate) {
+            shadow.rotation = Math.PI;
+        } else {
+            shadow.rotation = 0;
+        }
+
+        return shadow;
+    },
 
     beginWinAnimation(winLines, scatter) {
         this.game.winAnimation = true;
